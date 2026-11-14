@@ -88,13 +88,23 @@
   button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
   :focus-visible { outline: 3px solid var(--brass-hi); outline-offset: 3px; }
 
-  .house { flex: 1; display: grid; gap: 28px; justify-content: center; align-content: start; grid-template-columns: minmax(0, 440px); padding-bottom: 28px; }
-  .play { display: flex; flex-direction: column; align-items: center; gap: 14px; min-width: 0; }
-  .side { display: flex; flex-direction: column; align-items: center; gap: 16px; min-width: 0; }
+  .house { flex: 1; display: grid; gap: 14px; justify-content: center; align-content: start; grid-template-columns: minmax(0, 440px); padding-bottom: 28px; }
+  .head, .play { display: flex; flex-direction: column; align-items: center; gap: 14px; min-width: 0; }
+  .side { display: flex; flex-direction: column; align-items: center; gap: 16px; min-width: 0; margin-top: 14px; }
+  .foot { display: flex; flex-direction: column; align-items: center; gap: 12px; min-width: 0; margin-top: 10px; }
   @media (min-width: 820px) {
-    .house { grid-template-columns: minmax(0, 440px) 300px; gap: 56px; }
-    /* wide: the door stands beside the ladder and stays in view while the rows grow */
-    .side { position: sticky; top: 20px; align-self: start; padding-top: 150px; }
+    /* wide: the title sits centred across the page, with the board and the door side by side beneath it.
+       On a tall window the whole area moves down, so it doesn't hug the top with empty wall above the keyboard. */
+    .house {
+      grid-template-columns: minmax(0, 440px) 300px; gap: 24px 56px;
+      padding-top: clamp(0px, calc((100vh - 780px) * 0.45), 170px);
+    }
+    .head, .foot { grid-column: 1 / -1; }
+    .head .how { max-width: none; }
+    .foot { margin-top: 26px; }
+    .foot .small { max-width: 64ch; }
+    /* the door stands beside the ladder and stays in view while the rows grow */
+    .side { position: sticky; top: 20px; align-self: start; margin-top: 0; }
   }
 
   /* Enamel plaque: the title sign, the HOME plaque, the copy button */

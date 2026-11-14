@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Doorstep</title>
+<meta name="description" content="A daily word puzzle. Change one letter at a time until your word becomes HOME.">
+<link rel="canonical" href="https://playdoorstep.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Doorstep">
+<meta property="og:title" content="Doorstep">
+<meta property="og:description" content="A daily word puzzle. Change one letter at a time until your word becomes HOME.">
+<meta property="og:url" content="https://playdoorstep.com/">
+<meta name="theme-color" content="#8a4636">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%226%22%20fill%3D%22%238a4636%22%2F%3E%3Cpath%20d%3D%22M8%2028V14a8%208%200%200%201%2016%200v14z%22%20fill%3D%22%23ece6d6%22%2F%3E%3Cpath%20d%3D%22M10.5%2028V14a5.5%205.5%200%200%201%2011%200v14z%22%20fill%3D%22%231d5a49%22%2F%3E%3Ccircle%20cx%3D%2219%22%20cy%3D%2220%22%20r%3D%221.2%22%20fill%3D%22%23ead394%22%2F%3E%3C%2Fsvg%3E">
+<link rel="preload" href="fonts/besley.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/hanken-grotesk.woff2" as="font" type="font/woff2" crossorigin>
+<style>:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>
+  /* The two typefaces ship with the site; build.js fills this in. Nothing is fetched from a font service. */
+  @font-face { font-family: "Besley"; font-style: normal; font-weight: 400 900; font-display: swap; src: url(fonts/besley.woff2) format("woff2"); }
+  @font-face { font-family: "Hanken Grotesk"; font-style: normal; font-weight: 400 700; font-display: swap; src: url(fonts/hanken-grotesk.woff2) format("woff2"); }
+  /* Layout: a house front. Words are screwed to the wall one row at a time, leading to the front door
+     (below the rows on a phone, beside them on a wide screen); the letter keys sit on the pavement at the foot of the screen. */
+  :root {
+    --brick: #8a4636; --mortar: #6f3627;
+    --wall-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Crect width='120' height='60' fill='%236f3627'/%3E%3Crect x='1.5' y='1.5' width='57' height='27' fill='%238a4636'/%3E%3Crect x='61.5' y='1.5' width='57' height='27' fill='%23904b3a'/%3E%3Crect x='-28.5' y='31.5' width='57' height='27' fill='%23854233'/%3E%3Crect x='31.5' y='31.5' width='57' height='27' fill='%238d4838'/%3E%3Crect x='91.5' y='31.5' width='57' height='27' fill='%23854233'/%3E%3C/svg%3E");
+    --on-wall: #fff5ec; --on-wall-soft: #f8e2d7;
+    --enamel: #f5f2e9; --enamel-shade: #cfc9b8; --gloss: rgb(255 255 255 / .6);
+    --cobalt: #1b3d92; --on-cobalt: #f8f6ee;
+    --door: #1d5a49; --door-shade: #144236; --frame: #ece6d6; --frame-shade: #c9c2ae;
+    --brass: #c9a24e; --brass-hi: #ead394; --brass-lo: #8f6f2a; --on-brass: #2e2107;
+    --light: #ffd88a; --light-deep: #f3a94a; --spill: rgb(255 216 138 / .34);
+    --pave: #6a645b; --pave-edge: #8d867a;
+    --cat: #231f1c; --cat-eye: #ead394; --mat: #b48d57; --mat-edge: #7c5c2f; --on-mat: #2e2107;
+    --ink: #1e2330; --ink-soft: #4b5163;
+    --shadow: rgb(30 10 5 / .45);
+    --display: "Besley", "Rockwell", "Georgia", serif;
+    --text: "Hanken Grotesk", "Segoe UI", system-ui, sans-serif;
+    --ease-out: cubic-bezier(.16, 1, .3, 1); --ease-shake: cubic-bezier(.36, .07, .19, .97);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --brick: #2d1b17; --mortar: #1c110e;
+      --wall-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Crect width='120' height='60' fill='%231c110e'/%3E%3Crect x='1.5' y='1.5' width='57' height='27' fill='%232d1b17'/%3E%3Crect x='61.5' y='1.5' width='57' height='27' fill='%23311e19'/%3E%3Crect x='-28.5' y='31.5' width='57' height='27' fill='%23291814'/%3E%3Crect x='31.5' y='31.5' width='57' height='27' fill='%232f1d18'/%3E%3Crect x='91.5' y='31.5' width='57' height='27' fill='%23291814'/%3E%3C/svg%3E");
+      --on-wall: #f3e9df; --on-wall-soft: #d5bdb0;
+      --enamel: #e0dccf; --enamel-shade: #a39d8c; --gloss: rgb(255 255 255 / .28);
+      --cobalt: #1b3d92; --on-cobalt: #eeebe0;
+      --door: #184c3e; --door-shade: #0f3229; --frame: #c4bead; --frame-shade: #948e7d;
+      --brass: #b08c40; --brass-hi: #d4ba78; --brass-lo: #6f5520; --on-brass: #1f1604;
+      --light: #ffd27a; --light-deep: #ef9a35; --spill: rgb(255 200 110 / .5);
+      --pave: #1b1715; --pave-edge: #2f2925;
+    --cat: #d8c9ad; --cat-eye: #231f1c; --mat: #8a6a3e; --mat-edge: #5a4424; --on-mat: #1f1604;
+      --shadow: rgb(0 0 0 / .6);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --brick: #2d1b17; --mortar: #1c110e;
+    --wall-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Crect width='120' height='60' fill='%231c110e'/%3E%3Crect x='1.5' y='1.5' width='57' height='27' fill='%232d1b17'/%3E%3Crect x='61.5' y='1.5' width='57' height='27' fill='%23311e19'/%3E%3Crect x='-28.5' y='31.5' width='57' height='27' fill='%23291814'/%3E%3Crect x='31.5' y='31.5' width='57' height='27' fill='%232f1d18'/%3E%3Crect x='91.5' y='31.5' width='57' height='27' fill='%23291814'/%3E%3C/svg%3E");
+    --on-wall: #f3e9df; --on-wall-soft: #d5bdb0;
+    --enamel: #e0dccf; --enamel-shade: #a39d8c; --gloss: rgb(255 255 255 / .28);
+    --cobalt: #1b3d92; --on-cobalt: #eeebe0;
+    --door: #184c3e; --door-shade: #0f3229; --frame: #c4bead; --frame-shade: #948e7d;
+    --brass: #b08c40; --brass-hi: #d4ba78; --brass-lo: #6f5520; --on-brass: #1f1604;
+    --light: #ffd27a; --light-deep: #ef9a35; --spill: rgb(255 200 110 / .5);
+    --pave: #1b1715; --pave-edge: #2f2925;
+    --cat: #d8c9ad; --cat-eye: #231f1c; --mat: #8a6a3e; --mat-edge: #5a4424; --on-mat: #1f1604;
+    --shadow: rgb(0 0 0 / .6);
+    color-scheme: dark;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { height: 100%; background: var(--brick); scrollbar-color: var(--brass) var(--mortar); }
+  body {
+    --gl: max(16px, env(safe-area-inset-left, 0px)); --gr: max(16px, env(safe-area-inset-right, 0px));
+    min-height: 100%; margin: 0; display: flex; flex-direction: column;
+    background: var(--brick) var(--wall-img) top center / 120px 60px;
+    color: var(--on-wall); font-family: var(--text); font-size: 16px; line-height: 1.45;
+    padding-block: 20px 0;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    -webkit-tap-highlight-color: transparent;
+  }
+  ::selection { background: var(--cobalt); color: var(--on-cobalt); }
+  button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
+  :focus-visible { outline: 3px solid var(--brass-hi); outline-offset: 3px; }
+
+  .house { flex: 1; display: grid; gap: 28px; justify-content: center; align-content: start; grid-template-columns: minmax(0, 440px); padding-bottom: 28px; }
+  .play { display: flex; flex-direction: column; align-items: center; gap: 14px; min-width: 0; }
+  .side { display: flex; flex-direction: column; align-items: center; gap: 16px; min-width: 0; }
+  @media (min-width: 820px) {
+    .house { grid-template-columns: minmax(0, 440px) 300px; gap: 56px; }
+    /* wide: the door stands beside the ladder and stays in view while the rows grow */
+    .side { position: sticky; top: 20px; align-self: start; padding-top: 150px; }
+  }
+
+  /* Enamel plaque: the title sign, the HOME plaque, the copy button */
+  .plaque {
+    font-family: var(--display); font-weight: 800; text-transform: uppercase; color: var(--on-cobalt);
+    background: linear-gradient(165deg, var(--gloss) 0%, transparent 34%), var(--cobalt);
+    box-shadow: inset 0 0 0 3px var(--cobalt), inset 0 0 0 5px var(--on-cobalt), 0 2px 0 rgb(0 0 0 / .25), 0 5px 9px var(--shadow);
+    border-radius: 6px;
+  }
+  h1.plaque { margin: 0; font-size: clamp(22px, 6.4vw, 30px); letter-spacing: .09em; line-height: 1; padding: 16px 26px 14px; text-align: center; }
+
+  /* Brass plates: facts, helper buttons, stats */
+  .brass {
+    color: var(--on-brass);
+    background: linear-gradient(180deg, var(--brass-hi), var(--brass) 60%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .35), inset 0 -2px 0 var(--brass-lo), 0 1px 0 rgb(0 0 0 / .3), 0 3px 6px var(--shadow);
+    border-radius: 3px;
+  }
+  .facts { display: flex; gap: 14px; padding: 5px 16px; font-size: 14px; font-weight: 700; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+  .facts span + span { border-left: 1px solid rgb(0 0 0 / .28); padding-left: 14px; }
+  .how { margin: 0; max-width: 34ch; text-align: center; font-size: 15px; color: var(--on-wall); text-wrap: balance; }
+  .how b { font-family: var(--display); font-weight: 800; letter-spacing: .08em; }
+
+  /* Letter tiles */
+  .tile {
+    position: relative; display: grid; place-items: center;
+    font-family: var(--display); font-weight: 800; line-height: 1; text-transform: uppercase;
+    color: var(--cobalt);
+    background: linear-gradient(160deg, var(--gloss) 0%, transparent 36%), var(--enamel);
+    box-shadow: inset 0 0 0 3px var(--enamel), inset 0 0 0 5px var(--cobalt), 0 2px 0 var(--enamel-shade), 0 5px 8px var(--shadow);
+    border-radius: 8px;
+  }
+  /* a letter already in its HOME position */
+  .tile.match { color: var(--on-cobalt); background: linear-gradient(160deg, var(--gloss) 0%, transparent 36%), var(--cobalt); box-shadow: inset 0 0 0 3px var(--cobalt), inset 0 0 0 5px var(--on-cobalt), 0 2px 0 rgb(0 0 0 / .3), 0 5px 8px var(--shadow); }
+
+  /* The ladder: one word per row, newest at the bottom, then the row being typed */
+  .rows { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .rows li { display: flex; gap: clamp(7px, 2.2vw, 10px); }
+  .rows .tile, .rows .gap { width: clamp(54px, 16vw, 64px); height: clamp(64px, 19vw, 76px); font-size: clamp(32px, 9.6vw, 39px); }
+  .rows .tile:not(.typed)::before, .rows .tile:not(.typed)::after { content: ""; position: absolute; left: 50%; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass-lo)); }
+  .rows .tile::before { top: 8px; }
+  .rows .tile::after { bottom: 8px; }
+  .rows .gap { border: 2px dashed var(--on-wall-soft); border-radius: 8px; }
+  .rows .gap.next { border: 3px solid var(--brass-hi); }
+  /* typed but not yet screwed to the wall */
+  .rows .tile.typed { box-shadow: 0 2px 0 var(--enamel-shade), 0 8px 10px var(--shadow); rotate: -1.5deg; }
+  .rows .tile.typed:nth-child(even) { rotate: 1.5deg; }
+  .rows .tile.typed.pop { animation: pop 90ms var(--ease-out); }
+  .rows li.entry { scroll-margin-bottom: 310px; }
+  .rows li.placed .tile { animation: place 260ms var(--ease-out) both; }
+  .rows li.rejected { animation: reject 420ms var(--ease-shake); }
+  .rows li.entry.fresh { animation: rowin 150ms var(--ease-out); }
+  @keyframes rowin { from { opacity: 0; translate: 0 -6px; } to { opacity: 1; translate: 0 0; } }
+  .rows li.arrive .tile { animation: arrive 520ms var(--ease-out) both; }
+  .rows li.placed .tile:nth-child(2) { animation-delay: 35ms; }
+  .rows li.placed .tile:nth-child(3) { animation-delay: 70ms; }
+  .rows li.placed .tile:nth-child(4) { animation-delay: 105ms; }
+  .rows li.arrive .tile:nth-child(2) { animation-delay: 60ms; }
+  .rows li.arrive .tile:nth-child(3) { animation-delay: 120ms; }
+  .rows li.arrive .tile:nth-child(4) { animation-delay: 180ms; }
+  @keyframes pop { from { scale: .94; } to { scale: 1; } }
+  @keyframes place { from { translate: 0 -14px; rotate: 4deg; scale: 1.06; } to { translate: 0 0; rotate: 0deg; scale: 1; } }
+  @keyframes reject { 10%, 90% { transform: translateX(-2px); } 20%, 80% { transform: translateX(4px); } 30%, 50%, 70% { transform: translateX(-7px); } 40%, 60% { transform: translateX(7px); } }
+  @keyframes arrive { 0% { translate: 0 0; scale: 1; } 45% { translate: 0 -10px; scale: 1.06; } 100% { translate: 0 0; scale: 1; } }
+
+  .msg { min-height: 1.45em; margin: 0; text-align: center; font-size: 15px; font-weight: 500; color: var(--on-wall); }
+
+  /* The door the ladder leads to */
+  .door { position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; }
+  .door .plaque { font-size: 19px; letter-spacing: .22em; padding: 9px 12px 8px 17px; line-height: 1; margin-bottom: 9px; }
+  .porch { position: relative; display: flex; flex-direction: column; align-items: center; }
+  .frame {
+    display: block; border: 0; cursor: pointer;
+    position: relative; width: 136px; height: 176px; padding: 8px 8px 0;
+    background: var(--frame); border-radius: 68px 68px 0 0;
+    box-shadow: inset 0 -3px 0 var(--frame-shade), 0 4px 10px var(--shadow);
+    perspective: 520px;
+  }
+  .inside, .leaf { position: absolute; inset: 8px 8px 0; border-radius: 60px 60px 0 0; }
+  /* the lit hallway: lamp glow, far wall, floor */
+  .inside { background: radial-gradient(60% 40% at 50% 34%, #fff6d8 0%, transparent 70%), linear-gradient(to top, var(--light-deep) 0 24%, var(--light) 24%); }
+  .leaf {
+    background: linear-gradient(90deg, rgb(255 255 255 / .1), transparent 30%), var(--door);
+    box-shadow: inset 0 0 0 2px var(--door-shade);
+    transform-origin: left center; transition: transform 1100ms var(--ease-out) 250ms;
+  }
+  .leaf i { position: absolute; display: block; }
+  .leaf .fan { left: 14px; right: 14px; top: 12px; height: 46px; border-radius: 46px 46px 0 0; background: var(--door-shade); box-shadow: inset 0 0 0 3px var(--door), inset 0 0 0 5px var(--brass-lo); }
+  .leaf .panel { left: 14px; right: 14px; top: 70px; height: 34px; border-radius: 2px; box-shadow: inset 0 0 0 2px var(--door-shade), inset 0 3px 0 rgb(0 0 0 / .18); }
+  .leaf .panel.low { top: 124px; height: 36px; }
+  .leaf .letterbox { left: 38px; right: 38px; top: 110px; height: 7px; border-radius: 2px; background: linear-gradient(var(--brass-hi), var(--brass-lo)); }
+  .leaf .knob { right: 9px; top: 100px; width: 10px; height: 10px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass-lo)); box-shadow: 0 1px 2px rgb(0 0 0 / .5); }
+  .frame:disabled { cursor: default; }
+  .door.rattle .leaf { animation: rattle 320ms var(--ease-shake); }
+  @keyframes rattle { 20%, 60% { translate: -2px 0; } 40%, 80% { translate: 2px 0; } }
+
+  /* The resident: a cat on the step who watches you spell */
+  .cat { position: absolute; left: calc(50% + 58px); bottom: 11px; color: var(--cat); overflow: visible; }
+  .cat .eyes { fill: var(--cat-eye); transform-origin: 21px 17.5px; animation: blink 6s infinite; }
+  .cat .lids { stroke: var(--cat-eye); opacity: 0; }
+  .cat .tail { transform-origin: 36px 48px; animation: sway 9s ease-in-out infinite; }
+  .cat .head { transform-origin: 21px 28px; }
+  @keyframes blink { 0%, 95%, 100% { scale: 1 1; } 97% { scale: 1 .1; } }
+  /* still most of the time, with a short flick every 9 seconds */
+  @keyframes sway { 0%, 22%, 100% { rotate: 0deg; } 6% { rotate: 9deg; } 12% { rotate: -7deg; } 18% { rotate: 6deg; } }
+  /* unimpressed: flat eyes and a slow head shake */
+  .cat[data-mood="nope"] .eyes { opacity: 0; }
+  .cat[data-mood="nope"] .lids { opacity: 1; }
+  .cat[data-mood="nope"] .head { animation: no 640ms ease-in-out; }
+  @keyframes no { 25%, 75% { rotate: -7deg; } 50% { rotate: 7deg; } }
+  /* approving: a quick tail flick */
+  .cat[data-mood="pleased"] .tail { animation: flick 300ms ease-in-out 2; }
+  @keyframes flick { 50% { rotate: 24deg; } }
+  /* when the door opens the cat goes in first */
+  .door.open .cat { animation: goin 700ms cubic-bezier(0.23, 1, 0.32, 1) 700ms forwards; }
+  @keyframes goin { 30% { translate: -12px -8px; opacity: 1; } 100% { translate: -66px 0; scale: .7; opacity: 0; } }
+  .door.still .cat { display: none; }
+
+  .mat {
+    margin-top: 7px; min-width: 128px; padding: 5px 12px 4px; text-align: center;
+    font-family: var(--display); font-weight: 800; font-size: 12px; letter-spacing: .16em; line-height: 1.3; text-transform: uppercase;
+    color: var(--on-mat); background: var(--mat); border-radius: 2px;
+    border: 2px dashed var(--mat-edge); box-shadow: 0 3px 5px var(--shadow);
+  }
+  /* the words dip out and back when the mat changes its mind; the mat itself stays still */
+  .mat span { display: inline-block; transition: opacity 120ms ease, translate 120ms ease; }
+  .mat span.swap { opacity: 0; translate: 0 3px; }
+
+  .doorstep { width: 220px; height: 11px; background: var(--frame); border-radius: 2px 2px 0 0; box-shadow: inset 0 -4px 0 var(--frame-shade), 0 4px 8px var(--shadow); }
+  /* light leaving the doorway onto the step and the wall */
+  .spill { position: absolute; z-index: -1; left: 50%; bottom: -46px; width: 380px; max-width: 100vw; height: 270px; translate: -50% 0; background: radial-gradient(closest-side, var(--spill), transparent); opacity: 0; transition: opacity 1200ms ease-out 500ms; pointer-events: none; }
+  .door.open .leaf { transform: rotateY(-74deg); }
+  .door.open .spill { opacity: 1; }
+  .door.still .leaf, .door.still .spill { transition: none; }
+
+  .done { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; max-width: 36ch; scroll-margin-bottom: 24px; }
+  .done h2 { margin: 0; font-family: var(--display); font-weight: 800; font-size: 24px; line-height: 1.2; text-wrap: balance; }
+  .done p { margin: 0; font-size: 15px; color: var(--on-wall-soft); }
+  .done .route { font-family: var(--display); font-weight: 600; letter-spacing: .06em; color: var(--on-wall); }
+  button.plaque { border: 0; min-height: 44px; font-size: 15px; letter-spacing: .08em; padding: 12px 22px 11px; margin-top: 4px; }
+  /* the share message, shown only when it could not be copied automatically */
+  .sharetext { margin: 0; max-width: 100%; padding: 10px 12px; text-align: left; font: 14px/1.45 var(--text); white-space: pre-wrap; overflow-wrap: anywhere; color: var(--on-wall); background: rgb(0 0 0 / .28); border-radius: 6px; user-select: all; -webkit-user-select: all; }
+  button.plaque, .past button { transition: transform 160ms ease-out; }
+  button.plaque:active, .past button:active { transform: scale(0.97); }
+
+  /* Text links painted on the wall and the pavement */
+  .links { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 14px; }
+  .links a, .links button { border: 0; background: none; padding: 6px 2px; font-size: 14px; font-weight: 500; color: var(--on-wall); text-decoration: underline; text-underline-offset: 3px; }
+
+  /* Enamel notice sheet: the pop-ups and the About / Privacy pages */
+  .sheet {
+    color: var(--ink); background: var(--enamel); border-radius: 10px; padding: 26px 24px 24px;
+    box-shadow: inset 0 0 0 3px var(--enamel), inset 0 0 0 5px var(--cobalt), 0 10px 30px var(--shadow);
+  }
+  .sheet h2 { margin: 0 0 10px; font-family: var(--display); font-weight: 800; font-size: 24px; line-height: 1.2; color: var(--cobalt); text-wrap: balance; }
+  .sheet h3 { margin: 26px 0 6px; font-family: var(--display); font-weight: 800; font-size: 19px; line-height: 1.25; color: var(--cobalt); text-wrap: balance; }
+  .sheet p, .sheet ul { margin: 0 0 10px; font-size: 16px; line-height: 1.55; }
+  .sheet ul { padding-left: 20px; }
+  .sheet ul li { margin-bottom: 6px; }
+  .sheet a { color: var(--cobalt); font-weight: 700; text-underline-offset: 3px; }
+  .sheet .lead { font-weight: 700; }
+  .sheet .meta { font-size: 14px; color: var(--ink-soft); }
+  .sheet ::selection { background: var(--cobalt); color: var(--on-cobalt); }
+
+  dialog { border: 0; padding: 0; background: transparent; color: inherit; width: min(100% - 32px, 440px); max-height: calc(100% - 32px); overflow: auto; }
+  dialog::backdrop { background: rgb(22 9 5 / .68); }
+  dialog .sheet { position: relative; text-align: center; padding-top: 34px; }
+  dialog[open] { animation: rise 260ms var(--ease-out); }
+  @keyframes rise { from { translate: 0 14px; opacity: .4; } to { translate: 0 0; opacity: 1; } }
+  .close { position: absolute; top: 10px; right: 10px; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--cobalt); }
+  .close:focus-visible, .sheet a:focus-visible { outline-color: var(--cobalt); }
+  .mini { display: flex; flex-direction: column; align-items: center; gap: 7px; margin: 16px 0; padding: 0; list-style: none; }
+  .mini li { display: flex; gap: 5px; }
+  .mini .tile { width: 40px; height: 46px; font-size: 24px; border-radius: 5px; box-shadow: inset 0 0 0 2px var(--enamel), inset 0 0 0 4px var(--cobalt), 0 1px 0 var(--enamel-shade), 0 2px 4px rgb(0 0 0 / .25); }
+  .mini .tile.match { box-shadow: inset 0 0 0 2px var(--cobalt), inset 0 0 0 4px var(--on-cobalt), 0 2px 4px rgb(0 0 0 / .25); }
+  .mini .tile.changed { outline: 3px solid var(--brass); outline-offset: 2px; }
+
+  /* The archive list inside its pop-up */
+  .pastlist { list-style: none; margin: 14px 0 0; padding: 0; text-align: left; border-top: 1px solid var(--enamel-shade); }
+  .pastlist button { width: 100%; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 11px 6px; border: 0; border-bottom: 1px solid var(--enamel-shade); background: none; color: var(--ink); }
+  .pastlist button:hover { background: rgb(27 61 146 / .08); }
+  .pastlist button:focus-visible { outline-color: var(--cobalt); outline-offset: -3px; }
+  .pastlist b { font-family: var(--display); font-weight: 800; font-size: 17px; letter-spacing: .06em; color: var(--cobalt); font-variant-numeric: tabular-nums; }
+  .pastlist span { font-size: 14px; color: var(--ink-soft); white-space: nowrap; }
+  /* The notice shown above the board while a past puzzle is on it */
+  .past { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 12px; font-size: 14px; font-weight: 500; text-align: center; }
+  .past button { border: 0; min-height: 36px; padding: 6px 13px; font-size: 14px; font-weight: 700; }
+
+  .page { flex: 1; width: 100%; max-width: 660px; margin: 0 auto; padding-bottom: 40px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .page .sheet { width: 100%; padding: 30px clamp(20px, 5vw, 40px); }
+  .page .sheet h2 { font-size: clamp(24px, 5.4vw, 30px); margin-bottom: 14px; }
+  a.plaque { display: inline-block; text-decoration: none; font-size: clamp(20px, 5.6vw, 26px); letter-spacing: .09em; line-height: 1; padding: 14px 22px 12px; }
+
+  /* Ad spaces. Each has a fixed size reserved in the layout, so nothing jumps when an ad loads, and none sits
+     against the keyboard. build.js fills them in only once an AdSense ID is set; until then they do not exist. */
+  .ad-wrap { display: flex; justify-content: center; }
+  .ad-wrap.top { margin-bottom: 16px; }
+  .ad-top { display: inline-block; width: 320px; height: 50px; }
+  .ad-side { display: inline-block; width: 300px; height: 250px; }
+  .ad-rail { display: none; }
+  @media (min-width: 760px) { .ad-top { width: 728px; height: 90px; } }
+  /* the two side ads appear only where there is room beside the board and the whole ad fits on screen */
+  @media (min-width: 1360px) and (min-height: 760px) {
+    .ad-wrap.rail { position: fixed; top: 140px; z-index: 6; }
+    .ad-wrap.left { left: 16px; }
+    .ad-wrap.right { right: 16px; }
+    .ad-rail { display: inline-block; width: 160px; height: 600px; }
+  }
+  /* placeholder boxes shown only by `node build.js --ad-preview`, to check positions before real ads exist */
+  .ad-preview { box-sizing: border-box; border: 2px dashed var(--on-wall-soft); background: rgb(0 0 0 / .22); color: var(--on-wall); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; text-align: center; padding-top: 6px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; max-width: 250px; padding: 9px 4px 10px; text-align: center; }
+  .stats div + div { border-left: 1px solid rgb(0 0 0 / .28); }
+  .stats b { display: block; font-family: var(--display); font-weight: 800; font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .stats span { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+  .small { margin: 0; font-size: 14px; color: var(--on-wall-soft); max-width: 34ch; text-align: center; }
+
+  /* The pavement: letter keys and helpers stay under the thumb */
+  .ground {
+    position: sticky; bottom: 0; z-index: 5;
+    margin-left: calc(-1 * var(--gl)); margin-right: calc(-1 * var(--gr));
+    padding: 14px var(--gr) 12px var(--gl);
+    background: var(--pave); box-shadow: inset 0 4px 0 var(--pave-edge), 0 -8px 16px var(--shadow);
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  /* on the solve the keyboard slides off the bottom edge before it is hidden */
+  .ground { transition: translate 250ms var(--ease-out); }
+  .ground.leaving { translate: 0 calc(100% + 16px); pointer-events: none; }
+  .tray { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 440px; }
+  .tray div { display: flex; justify-content: center; gap: 5px; }
+  .key {
+    flex: 1 1 0; max-width: 40px; height: 46px; padding: 0; border: 0; border-radius: 5px;
+    display: grid; place-items: center;
+    font-family: var(--display); font-weight: 800; font-size: 18px; line-height: 1; text-transform: uppercase;
+    color: var(--cobalt); background: linear-gradient(160deg, var(--gloss) 0%, transparent 40%), var(--enamel);
+    box-shadow: 0 2px 0 var(--enamel-shade), 0 4px 5px var(--shadow);
+    transition: transform 90ms ease-out;
+  }
+  .key.wide { flex: 1.7 1 0; max-width: 66px; font-size: 13px; letter-spacing: .03em; }
+  .key.enter { color: var(--on-cobalt); background: linear-gradient(160deg, var(--gloss) 0%, transparent 40%), var(--cobalt); box-shadow: 0 2px 0 rgb(0 0 0 / .35), 0 4px 5px var(--shadow); }
+  .key:active { transform: translateY(2px); }
+  .tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .tools button { border: 0; min-height: 40px; padding: 8px 15px; font-size: 14px; font-weight: 700; transition: transform 90ms ease-out; }
+  .tools button:active { transform: translateY(1px); }
+  .tools button:disabled { color: rgb(46 33 7 / .5); cursor: default; }
+
+  /* Reduced motion: nothing moves, but the fades that help you follow what happened stay */
+  @keyframes fade { from { opacity: .4; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .leaf, .key, .tools button, .ground { transition: none; }
+    .spill { transition: opacity 400ms ease-out; }
+    .cat .eyes, .cat .tail, .cat .head, .door.rattle .leaf { animation: none !important; }
+    .door.open .cat { animation: none; opacity: 0; }
+    dialog[open] { animation: fade 200ms ease; }
+    .rows li, .rows li .tile { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<main class="house" id="game">
+  <div class="play">
+    <h1 class="plaque">Doorstep</h1>
+    <div class="brass facts"><span id="pnum"></span></div>
+    <button class="plaque" id="fresh" type="button" hidden>A new word is up. Play it</button>
+    <div class="past" id="past" hidden>
+      <span>A past puzzle. It won't change your streak.</span>
+      <button class="brass" type="button" data-today>Back to today</button>
+    </div>
+    <p class="how">Type a word that changes one letter of the word above. Keep going until you reach <b>HOME</b>.</p>
+
+    <ol class="rows" id="rows"></ol>
+    <p class="msg" id="msg" role="status"></p>
+  </div>
+
+  <div class="side">
+    <div class="door" id="door">
+      <div class="spill" aria-hidden="true"></div>
+      <div class="plaque" aria-hidden="true">HOME</div>
+      <div class="porch">
+        <button class="frame" id="knock" type="button" aria-label="Knock on the door">
+          <span class="inside"></span>
+          <span class="leaf"><i class="fan"></i><i class="panel"></i><i class="letterbox"></i><i class="panel low"></i><i class="knob"></i></span>
+        </button>
+        <div class="doorstep" aria-hidden="true"></div>
+        <svg class="cat" id="cat" viewBox="0 0 48 54" width="44" height="50" aria-hidden="true">
+          <path class="tail" d="M36 48c9 0 10-12 4-16" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+          <path d="M9 52c-2-15 3-25 13-25s15 10 13 25z" fill="currentColor"/>
+          <g class="head">
+            <path d="M10 15L8 3l10 5zM32 15l2-12-10 5z" fill="currentColor"/>
+            <circle cx="21" cy="18" r="11.5" fill="currentColor"/>
+            <g class="eyes"><ellipse cx="16.5" cy="17.5" rx="2.4" ry="3"/><ellipse cx="25.5" cy="17.5" rx="2.4" ry="3"/></g>
+            <path class="lids" d="M13.6 17.5h5.8M22.6 17.5h5.8" fill="none" stroke-width="1.8" stroke-linecap="round"/>
+          </g>
+        </svg>
+      </div>
+      <div class="mat" aria-hidden="true"><span id="mat">Not yet</span></div>
+    </div>
+
+    <div class="done" id="done" hidden>
+      <h2 id="doneTitle"></h2>
+      <p id="doneSub"></p>
+      <div class="tools">
+        <button class="brass" id="bestBtn" type="button" data-open="best" hidden></button>
+        <button class="brass" id="todayBtn" type="button" data-today hidden>Back to today</button>
+      </div>
+      <button class="plaque" id="shareBtn" type="button">Share result</button>
+      <p id="shareNote" role="status" hidden></p>
+      <pre class="sharetext" id="shareText" hidden></pre>
+      <p id="nextIn"></p>
+    </div>
+    <div class="brass stats">
+      <div><b id="played">0</b><span>Played</span></div>
+      <div><b id="solved">0</b><span>Solved</span></div>
+      <div><b id="streak">0</b><span>Streak</span></div>
+    </div>
+        <p class="small">Blue tiles are letters already where HOME needs them. The fewer steps you take, the better. A new word goes up at midnight where you are, and everyone gets the same word for the same date.</p>
+    <nav class="links" aria-label="More">
+      <button type="button" data-open="how">How to play</button>
+      <button type="button" data-open="yest">Yesterday's answer</button>
+      <button type="button" data-open="past">Past puzzles</button>
+      <a href="about.html">About</a>
+      <a href="privacy.html">Privacy</a>
+    </nav>
+  </div>
+</main>
+
+<div class="ground" id="ground">
+  <div class="tray" id="tray" role="group" aria-label="Keyboard"></div>
+  <div class="links">
+    <button type="button" data-open="how">How to play</button>
+    <button type="button" data-open="yest">Yesterday's answer</button>
+    <button type="button" data-open="past">Past puzzles</button>
+  </div>
+</div>
+
+<dialog id="pastDlg" aria-labelledby="pastTitle">
+  <div class="sheet">
+    <button class="close" type="button" data-close aria-label="Close"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <h2 id="pastTitle">Past puzzles</h2>
+    <p>Missed a day? Play it here. Past puzzles don't change your streak.</p>
+    <p id="pastNone" hidden>Nothing here yet. Today's puzzle is the first, so it moves in tomorrow.</p>
+    <ol class="pastlist" id="pastList"></ol>
+  </div>
+</dialog>
+
+<dialog id="howDlg" aria-labelledby="howTitle">
+  <div class="sheet">
+    <button class="close" type="button" data-close aria-label="Close"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <h2 id="howTitle">How to play</h2>
+    <p class="lead">Get to HOME in as few steps as you can.</p>
+    <p>Each word you type must change exactly one letter of the word above it, and it has to be a real word.</p>
+    <ol class="mini" aria-label="Example: CORE becomes COME by changing the third letter">
+      <li><span class="tile">c</span><span class="tile match">o</span><span class="tile">r</span><span class="tile match">e</span></li>
+      <li><span class="tile">c</span><span class="tile match">o</span><span class="tile match changed">m</span><span class="tile match">e</span></li>
+    </ol>
+    <p>Blue tiles are letters already where HOME needs them.</p>
+    <p>Took a wrong turn? You can go back to a word you've already played, but every word counts as a step.</p>
+    <p>Everyone gets the same start word each day. When you finish, you'll see if you found the shortest route.</p>
+    <p class="meta">The cat on the step is only watching. It has opinions.</p>
+    <button class="plaque" type="button" data-close>Start playing</button>
+  </div>
+</dialog>
+
+<dialog id="yestDlg" aria-labelledby="yestTitle">
+  <div class="sheet">
+    <button class="close" type="button" data-close aria-label="Close"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <h2 id="yestTitle"></h2>
+    <p id="yestText"></p>
+    <ol class="mini" id="yestRows"></ol>
+    <p class="meta" id="yestMine" hidden></p>
+  </div>
+</dialog>
+
+
+
+<script>
+// WORDS: every four-letter word the game accepts as a guess
+const WORDS = "aahs aals abas abba abbe abed abet able ably abri abut abye abys aced aces ache achy acid acme acne acre acta acts acyl adds adit ados adze aeon aero aery afar agar agas aged agee ager ages agha agin agio agly agma agog agon ague ahem ahoy aide aids ails aims ains airn airs airt airy aits ajar ajee akee akin alae alan alar alas alba albs alec alee alef ales alfa alga alif alit alky alls ally alma alme alms aloe alow alps also alto alts alum amah amas ambo amen amia amid amie amin amir amis ammo amok amps amus amyl anas ands anes anew anga anil anis ankh anna anoa anon ansa anta ante anti ants aped aper apes apex apod apse aqua arak arbs arch arco arcs area ares arfs aria arid aril arks arms army arts arty arum arvo aryl asci asea ashy asks asps atap ates atma atom atop auks auld aunt aura auto aver aves avid avos avow away awed awee awes awls awns awny awol awry axal axed axel axes axil axis axle axon ayah ayes ayin azan azon baal baas baba babe babu baby bach back bade bads baff bags baht bail bait bake bald bale balk ball balm bals bams band bane bang bani bank bans baps barb bard bare barf bark barm barn bars base bash bask bass bast bate bath bats batt baud bawd bawl bays bead beak beam bean bear beat beau beck beds bedu beef been beep beer bees beet begs bell bels belt bema bend bene bens bent berg berm best beta beth bets bevy beys bhut bias bibb bibs bice bide bids bier biff bigs bike bile bilk bill bima bind bine bins bios bird birk birl birr bise bisk bite bits bitt bize blab blae blah blam blat blaw bleb bled blet blew blin blip blob bloc blot blow blub blue blur boar boas boat bobs bock bode bods body boff bogs bogy boil bola bold bole boll bolo bolt bomb bond bone bong bonk bony boob book boom boon boor boos boot bops bora bore born bort bosh bosk boss bota both bots bott bout bowl bows boxy boyo boys bozo brad brae brag bran bras brat braw bray bred bree bren brew brie brig brim brin brio bris brit broo bros brow brrr brut bubo bubs buck buds buff bugs buhl buhr bulb bulk bull bumf bump bums bund bung bunk bunn buns bunt buoy bura burd burg burl burn burp burr burs bury bush busk buss bust busy bute buts butt buys buzz byes byre byrl byte cabs caca cade cadi cads cafe caff cage cagy caid cain cake caky calf calk call calm calo calx came camp cams cane cans cant cape caph capo caps carb card care cark carl carn carp carr cars cart casa case cash cask cast cate cats caul cave cavy caws cays ceca cede cedi cees ceil cell cels celt cent cepe ceps cere cero cess cete chad cham chao chap char chat chaw chay chef chew chez chia chic chid chin chip chis chit chon chop chow chub chug chum ciao cine cion cire cist cite city clad clag clam clan clap claw clay clef clew clip clod clog clon clop clot cloy club clue coal coat coax cobb cobs coca coco coda code cods coed coff coft cogs coho coif coil coin coir coke cola cold cole cols colt coly coma comb come comp cone coni conk conn cons cony coof cook cool coop coos coot cope cops copy cord core corf cork corm corn cory cosh coss cost cosy cote cots coup cove cowl cows cowy coxa coys cozy crab crag cram craw crew crib cris croc crop crow crud crus crux cube cubs cuds cued cues cuff cuif cuke cull culm cult cups curb curd cure curf curl curn curr curs curt cusk cusp cuss cute cuts cwms cyan cyma cyme cyst czar dabs dace dada dado dads daff daft dags dahl dahs dais daks dale dals dame damp dams dang dank daps darb dare dark darn dart dash data date dato daub daut davy dawk dawn daws dawt days daze dead deaf deal dean dear debs debt deck deco deed deem deep deer dees deet defi deft defy deil deke dele delf deli dell dels deme demo demy dene dens dent deny dere derm desk deva devs dews dewy dexy deys dhak dhal dhow dial dibs dice dido didy died diel dies diet digs dike dill dime dims dine ding dink dins dint diol dips dipt dire dirk dirl dirt disc dish disk diss dita dite dits ditz diva dive djin doat doby dock docs dodo doer does doff doge dogs dogy doit dojo dole doll dols dolt dome doms dona done dons doom door dopa dope dopy dore dork dorm dorp dorr dors dory dose doss dost dote doth dots doty doum dour doux dove down dows doxy doze dozy drab drag dram drat draw dray dree dreg drek drew drib drip drop drub drug drum drys duad dual dubs duce duci duck duct dude duds duel dues duet duff dugs duit duke dull duly duma dumb dump dune dung dunk duns dunt duos dupe dups dura dure durn duro durr dusk dust duty dyad dyed dyer dyes dyne each earl earn ears ease east easy eath eats eaux eave ebbs ebon eche echo ecru ecus eddo eddy edge edgy edhs edit eels eely eery effs efts egad egal eger eggs eggy egis egos eide eked ekes elan elds elhi elks ells elms elmy else emes emeu emfs emic emir emit emus emyd ends engs enol enow envy eons epee epha epic epos eras ergo ergs erne erns eros errs erst eses espy etas etch eths etic etna etui euro even ever eves evil ewer ewes exam exec exes exit exon expo eyas eyed eyen eyer eyes eyne eyra eyre eyry face fact fade fado fads fail fain fair fake fall falx fame fane fang fano fans fard fare farl farm faro fash fast fate fats faun faux fava fave fawn fays faze feal fear feat feck feds feed feel fees feet fehs fell felt feme fems fend fens feod fere fern fess feta fete fets feud feus fiar fiat fibs fice fico fido fids fief fife figs fila file fill film filo fils find fine fink fino fins fire firm firn firs fisc fish fist fits five fixt fizz flab flag flak flam flan flap flat flaw flax flay flea fled flee flew flex fley flic flip flit floc floe flog flop flow flub flue flus flux foal foam fobs foci foes fogs fogy fohn foil foin fold folk fond fons font food fool foot fops fora forb ford fore fork form fort foss foul four fowl foxy foys fozy frae frag frap frat fray free fret frig frit friz froe frog from frow frug fubs fuci fuds fuel fugs fugu fuji full fume fumy fund funk funs furl furs fury fuse fuss futz fuze fuzz fyce fyke gabs gaby gadi gads gaed gaen gaes gaff gaga gage gags gain gait gala gale gall gals gama gamb game gamp gams gamy gane gang gaol gape gaps gapy garb gars gash gasp gast gate gats gaud gaum gaun gaur gave gawk gawp gays gaze gear geck geds geed geek gees geez geld gels gelt gems gene gens gent genu germ gest geta gets geum ghat ghee ghis gibe gibs gids gied gien gies gift giga gigs gild gill gilt gink gins gips gird girl girn giro girt gist gits give glad gled glee gleg glen gley glia glib glim glob glom glop glow glue glug glum glut gnar gnat gnaw gnus goad goal goas goat gobo gobs goby gods goer goes gogo gold golf gone gong good goof goon goop goos gore gorp gory gosh gout gowd gowk gown goys grab grad gram gran grat gray gree grew grey grid grig grim grin grip grit grog grot grow grub grue grum guan guar guck gude guff guid gulf gull gulp guls gums gunk guns guru gush gust guts guvs guys gybe gyms gyre gyri gyro gyve haaf haar habu hack hade hadj haed haem haen haes haet haft hags haha hahs haik hail hair haji hajj hake hale half hall halm halo halt hame hams hand hang hank hant haps hard hare hark harl harm harp hart hash hasp hast hate hath hats haul haut have hawk haws hays haze hazy head heal heap hear heat heck heed heel heft hehs heil heir held hell helm helo help heme hemp hems hens hent herb herd here herl herm hern hero hers hest heth hets hewn hews hick hide hied hies high hike hila hili hill hilt hind hins hint hips hire hisn hiss hist hits hive hoar hoax hobo hobs hock hods hoed hoer hoes hogg hogs hoke hold hole holk holm holp hols holt holy home homy hone hong honk hons hood hoof hook hoop hoot hope hops hora horn hose host hots hour hove howe howf howk howl hows hoya hoys hubs huck hued hues huff huge hugs huic hula hulk hull hump hums hung hunh hunk huns hunt hurl hurt hush husk huts hwan hyla hymn hype hypo hyps hyte iamb ibex ibis iced ices ichs icky icon idea idem ides idle idly idol idyl iffy iglu ikat ikon ilea ilex ilia ilka ilks ills illy imam imid immy impi imps inby inch info inia inks inky inly inns inro inti into ions iota ired ires irid iris irks iron isba isle isms itch item iwis ixia izar jabs jack jade jagg jags jail jake jamb jams jane jape jarl jars jato jauk jaup java jaws jays jazz jean jeed jeep jeer jees jeez jefe jehu jell jeon jerk jess jest jete jets jeux jews jiao jibb jibe jibs jiff jigs jill jilt jimp jink jinn jins jinx jive jobs jock joes joey jogs john join joke joky jole jolt josh joss jota jots jouk jowl jows joys juba jube judo juga jugs juju juke jump junk jupe jura jury just jute juts kaas kabs kadi kaes kafs kagu kaif kail kain kaka kaki kale kame kami kana kane kaon kapa kaph karn kart kata kats kava kayo kays kbar keas keck keef keek keel keen keep keet kefs kegs keir kelp kemp keno kens kent kepi keps kept kerb kerf kern keto keys khaf khan khat khet khis kibe kick kids kief kier kifs kill kiln kilo kilt kina kind kine king kink kino kins kips kirk kirn kirs kiss kist kite kith kits kiva kiwi knap knar knee knew knit knob knop knot know knur koan koas kobo kobs koel kohl kola kolo konk kook koph kops kore kors koss koto kris kudo kudu kues kuru kvas kyak kyar kyat kyte labs lace lack lacs lacy lade lads lady lags laic laid lain lair lake lakh laky lall lama lamb lame lamp lams land lane lang lank laps lard lari lark lars lase lash lass last late lath lati lats laud lava lave lavs lawn laws lays laze lazy lead leaf leak leal lean leap lear leas lech leek leer lees leet left legs lehr leis leke leks leku lend leno lens lent lept less lest lets leud leva levo levy lewd leys liar libs lice lich lick lido lids lied lief lien lier lies lieu life lift like lilt lily lima limb lime limn limo limp limy line ling link linn lino lins lint liny lion lips lira lire liri lisp list lite lits litu live load loaf loam loan lobe lobo lobs loca loch loci lock loco lode loft loge logo logs logy loin loll lone long loof look loom loon loop loos loot lope lops lord lore lorn lory lose loss lost lota loth loti lots loud loup lour lout love lowe lown lows luau lube luce luck lude lues luff luge lugs lull lulu lump lums luna lune lung lunk lunt luny lure lurk lush lust lute lutz luvs luxe lwei lyes lynx lyre lyse maar mabe mace mach mack macs made mads maes mage magi mags maid mail maim main mair make mako male mall malm malt mama mana mane mano mans many maps marc mare mark marl mars mart mash mask mass mast mate math mats matt maud maul maun maut mawn maws maxi maya mayo mays maze mazy mead meal mean meat meed meek meet meld mell mels melt memo mems mend meno menu meou meow mere merk merl mesa mesh mess meta mete meth mewl mews meze mhos mibs mica mice midi mids mien miff migg migs mike mild mile milk mill milo mils milt mime mina mind mine mini mink mint minx mire miri mirk mirs miry mise miso miss mist mite mitt mity mixt moan moas moat mobs mock mocs mode modi mods mogs moil mojo moke mola mold mole moll mols molt moly mome momi moms monk mono mons mony mood mool moon moor moos moot mope mops mopy mora more morn mors mort mosk moss most mote moth mots mott moue move mown mows moxa mozo much muck muds mugg mugs mule mull mumm mump mums mumu muni muns muon mura mure murk murr muse mush musk muss must mute muts mutt myna myth naan nabe nabs nada nags naif nail name nana nans naoi naos nape naps narc nard nark nary nave navy nays neap near neat nebs neck need neem neep neif nema nene neon nerd ness nest nets nett neuk neum neve nevi news newt next nibs nice nick nide nidi nigh nill nils nims nine nipa nips nisi nite nits nixe nixy nobs nock node nodi nods noel noes nogg nogs noil noir nolo noma nome noms nona none nook noon nope nori norm nose nosh nosy nota note noun nous nova nows nowt nubs nude nuke null numb nuns nurd nurl nuts oafs oaks oars oast oath oats obes obey obia obis obit oboe obol ocas odds odea odes odic odor odyl ofay offs ogam ogee ogle ogre ohed ohia ohms oils oily oink okas okay okeh okes okra olds oldy olea oleo oles olio olla omen omer omit once ones only onto onus onyx oohs oops oots ooze oozy opah opal oped open opes opts opus orad oral orbs orby orca orcs ordo ores orle orra orts oryx orzo osar oses ossa otic otto ouch ouds ouph ours oust outs ouzo oval oven over ovum owed owes owls owns owse oxen oxes oxid oxim oyer oyes oyez paca pace pack pacs pact padi pads page paid paik pail pain pair pale pall palm palp pals paly pams pane pang pans pant papa paps para pard pare park parr pars part pase pash pass past pate path pats paty pave pawl pawn paws pays peag peak peal pean pear peas peat pech peck pecs peds peed peek peel peen peep peer pees pegs pehs pein peke pele pelf pelt pend pens pent peon pepo peps peri perk perm pert peso pest pets pews pfft pfui phat phew phis phiz phon phot phut pial pian pias pica pice pick pics pied pier pies pigs pika pike piki pile pili pill pily pima pina pine ping pink pins pint piny pion pipe pips pipy pirn pish piso pita pith pits pity pixy plan plat play plea pleb pled plew plie plod plop plot plow ploy plug plum plus pock poco pods poem poet pogy pois poke poky pole poll polo pols poly pome pomp poms pond pone pong pons pony pood pooh pool poop poor pope pops pore pork port pose posh post posy pots pouf pour pout pows pram prao prat prau pray pree prep prex prey prez prig prim proa prod prof prog prom prop pros prow psis psst pubs puce puck puds puff pugh pugs puja pula pule puli pull pulp puls puma pump puna pung punk puns punt puny pupa pups pure puri purl purr purs push puss puts putt putz pyas pyes pyic pyin pyre qaid qats qoph quad quag quai quay quey quid quin quip quit quiz quod race rack racy rads raff raft raga rage ragi rags raia raid rail rain raja rake raki rale rami ramp rams rand rang rani rank rant raps rapt rare rase rash rasp rate rath rato rats rave raws raya rays raze razz read real ream reap rear rebs reck recs redd rede redo reds reed reef reek reel rees refs reft regs reif rein reis rely rems rend rent repo repp reps resh rest rete rets revs rhea rhos rhus rial rias ribs rice rich rick ride rids riel rife riff rifs rift rigs rile rill rime rims rimy rind ring rink rins riot ripe rips rise risk rite ritz rive road roam roan roar robe robs rock rocs rode rods roes roil role rolf roll romp roms rood roof rook room root rope ropy rose rosy rota rote roti rotl roto rots roue roup rout roux rove rows rube rubs ruby ruck rudd rude rued ruer rues ruff ruga rugs ruin rule ruly rump rums rune rung runs runt ruse rush rusk rust ruth ruts ryas ryes ryke rynd ryot sabe sabs sack sacs sade sadi safe saga sage sago sags sagy said sail sain sake saki sale sall salp sals salt same samp sand sane sang sank sans saps sard sari sark sash sass sate sati saul save sawn saws says scab scad scag scam scan scar scat scop scot scow scry scud scum scup scut seal seam sear seas seat secs sect seed seek seel seem seen seep seer sees sego segs seif seis self sell sels seme semi send sene sent sept sera sere serf sers seta sets sett sewn sews shad shah sham shat shaw shay shea shed shes shew shim shin ship shiv shmo shod shoe shog shoo shop shot show shri shul shun shut sial sibb sibs sice sick sics side sift sigh sign sike sild silk sill silo silt sima simp sims sine sing sinh sink sins sipe sips sire sirs site sith sits size sizy skag skas skat skee skeg skep skew skid skim skin skip skis skit skua slab slam slap slat slaw slay sled slew slid slim slip slit slob sloe slog slop slot slow slub slue slug slum slur smew smit smog smug snag snap snaw sned snib snip snit snob snog snot snow snub snug snye soak soap soar sobs sock soda sods sofa soft soil soja soke sola sold sole soli solo sols soma some sone song sons sook soon soot soph sops sora sorb sord sore sori sorn sort soth sots souk soul soup sour sous sown sows soya soys spae span spar spas spat spay spec sped spew spin spit spiv spot spry spud spue spun spur sris stab stag star stat staw stay stem step stet stew stey stir stoa stob stop stow stub stud stum stun stye suba subs such suck sudd suds sued suer sues suet sugh suit sulk sulu sumo sump sums sung sunk sunn suns supe sups suqs sura surd sure surf suss swab swag swam swan swap swat sway swig swim swob swop swot swum sybo syce syke syli sync syne syph tabs tabu tace tach tack taco tact tads tael tags tahr tail tain taka take tala talc tale tali talk tall tame tamp tams tang tank tans taos tapa tape taps tare tarn taro tarp tars tart task tass tate tats taus taut tavs taws taxa taxi teak teal team tear teas teat teds teed teel teem teen tees teff tegs tela tele tell tels temp tend tens tent tepa term tern test teth tets tews text thae than that thaw thee them then thew they thin thio thir this thou thro thru thud thug thus tick tics tide tidy tied tier ties tiff tike tiki tile till tils tilt time tine ting tins tint tiny tipi tips tire tirl tiro titi tivy toad toby tods tody toea toed toes toff toft tofu toga togs toil toit toke tola told tole toll tolu tomb tome toms tone tong tons tony took tool toom toon toot tope toph topi tops tora torc tore tori torn toro torr tors tort tory tosh toss tost tote tots tour tout town tows towy toyo toys trad tram trap tray tree tref trek tret trey trig trim trio trip trod trop trot trow troy true trug tsar tsks tuba tube tubs tuck tufa tuff tuft tugs tuis tule tump tuna tune tung tuns tups turf turk turn tush tusk tuts tutu twae twas twee twig twin twit twos tyee tyer tyes tyke tyne type typo typp typy tyre tyro tzar udos ughs ugly ukes ulan ulna ulus ulva umbo umps unai unau unbe unci unco unde undo undy unit unto upas upby updo upon urbs urds urea urge uric urns ursa urus used user uses utas uvea vacs vagi vail vain vair vale vamp vane vang vans vara vars vary vasa vase vast vats vatu vaus vavs vaws veal veep veer vees veil vein vela veld vena vend vent vera verb vert very vest veto vets vext vial vibe vice vide vied vier vies view viga vigs vile vill vims vina vine vino viny viol virl visa vise vita viva vive voes void vole volt vote vows vrow vugg vugh vugs wabs wack wade wadi wads wady waes waff waft wage wags waif wail wain wair wait wake wale walk wall waly wame wand wane wans want wany waps ward ware wark warm warn warp wars wart wary wash wasp wast wats watt wauk waul waur wave wavy wawl waws waxy ways weak weal wean wear webs weds weed week weel ween weep weer wees weet weft weir weka weld well welt wend wens went wept were wert west wets wham whap what whee when whet whew whey whid whig whim whin whip whir whit whiz whoa whom whop whys wich wick wide wife wigs wild wile will wilt wily wimp wind wine wing wink wino wins winy wipe wire wiry wise wish wisp wiss wist wite with wits wive woad woes woke woks wold wolf womb wonk wons wont wood woof wool woos word wore work worm worn wort wost wots wove wows wrap wren writ wuss wych wyes wyle wynd wynn wyns wyte xyst yack yaff yagi yaks yald yams yang yank yaps yard yare yarn yaud yaup yawl yawn yawp yaws yays yeah yean year yeas yech yegg yeld yelk yell yelp yens yerk yeti yett yeuk yews yill yins yipe yips yird yirr ylem yobs yock yodh yods yoga yogh yogi yoke yoks yolk yond yoni yore your yowe yowl yows yuan yuca yuch yuck yuga yuks yule yups yurt ywis zags zany zaps zarf zeal zebu zeds zees zein zeks zerk zero zest zeta zigs zill zinc zing zins zips ziti zits zoea zoic zone zonk zoom zoon zoos zori zyme".split(" ");
+const WORD_SET = new Set(WORDS);
+const TARGET = "home";
+
+// Daily puzzle. The day changes at the player's own midnight; the same calendar date gives everyone the same word.
+const DAY = 86400000;
+const LAUNCH_DAY = Date.UTC(2026, 10, 14) / DAY;   // puzzle No. 1 is 14 November 2026 (months count from 0)
+// Never earlier than launch day, so the first puzzle is #1 everywhere, whatever the local date or clock says
+function today() { return Math.max(LAUNCH_DAY, Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / DAY)); }
+const dayIdx = today();
+const puzzleNo = dayIdx - LAUNCH_DAY + 1;
+// The frozen daily schedule, worked out when the site is built so the page does no searching on load.
+// One entry per day: a shortest route home from that day's start word (everyday words only), then how many shortest routes exist.
+const PUZZLES = "palm,pale,hale,hole,home:7 peat,pest,post,host,hose,home:9 road,goad,gold,hold,hole,home:6 rice,dice,dime,dome,home:10 meat,moat,most,host,hose,home:12 dire,dime,dome,home:2 tong,tone,hone,home:3 date,dote,dome,home:4 tent,dent,dene,done,hone,home:24 firm,form,fore,core,come,home:34 male,hale,hole,home:4 numb,dumb,dump,damp,dame,dome,home:4 mule,mole,hole,home:2 slit,slot,soot,hoot,host,hose,home:3 cube,cure,core,come,home:4 hoot,host,hose,home:2 spit,spot,soot,hoot,host,hose,home:3 lewd,lead,head,held,hold,hole,home:16 pile,pole,hole,home:2 food,hood,hold,hole,home:2 cozy,copy,cope,hope,home:10 corn,core,come,home:1 cull,hull,hall,hale,hole,home:20 lead,head,held,hold,hole,home:4 vote,dote,dome,home:6 horn,corn,core,come,home:5 sure,sore,some,home:1 risk,rise,rose,hose,home:1 pack,pace,pale,hale,hole,home:38 chin,coin,corn,core,come,home:3 flea,fled,feed,heed,held,hold,hole,home:5 duke,dune,done,hone,home:12 lurk,lure,cure,core,come,home:21 flew,fled,feed,heed,held,hold,hole,home:9 sell,hell,hall,hale,hole,home:31 good,hood,hold,hole,home:2 robe,role,hole,home:4 turf,surf,sure,sore,some,home:4 span,spat,spot,soot,hoot,host,hose,home:23 wiry,wire,dire,dime,dome,home:29 lank,lane,lone,hone,home:3 pipe,pope,hope,home:2 heed,held,hold,hole,home:3 weed,heed,held,hold,hole,home:5 week,weed,heed,held,hold,hole,home:37 lung,long,lone,hone,home:4 glad,goad,gold,hold,hole,home:1 wash,cash,case,came,come,home:13 kind,bind,bond,bone,hone,home:24 bush,push,posh,pose,hose,home:7 head,held,hold,hole,home:3 limp,lime,dime,dome,home:5 pale,hale,hole,home:4 must,most,host,hose,home:1 read,head,held,hold,hole,home:4 fund,fond,bond,bone,hone,home:9 mask,mast,most,host,hose,home:11 mead,head,held,hold,hole,home:7 slat,slot,soot,hoot,host,hose,home:11 vine,dine,done,hone,home:19 vent,dent,dene,done,hone,home:14 bean,bead,head,held,hold,hole,home:19 chat,coat,cost,host,hose,home:4 dart,dare,dame,dome,home:5 fled,feed,heed,held,hold,hole,home:5 mane,cane,cone,hone,home:34 wimp,limp,lime,dime,dome,home:8 burn,born,corn,core,come,home:17 oust,lust,lost,host,hose,home:8 rush,ruse,rose,hose,home:1 limb,lime,dime,dome,home:5 find,bind,bond,bone,hone,home:30 wind,bind,bond,bone,hone,home:29 word,cord,core,come,home:11 pain,pail,hail,hall,hale,hole,home:47 spin,spit,spot,soot,hoot,host,hose,home:47 rise,rose,hose,home:1 pail,hail,hall,hale,hole,home:11 post,host,hose,home:3 bend,bond,bone,hone,home:2 less,loss,lose,hose,home:1 raid,laid,land,lane,lone,hone,home:36 dash,cash,case,came,come,home:11 page,cage,came,come,home:19 coax,coat,cost,host,hose,home:5 fold,hold,hole,home:1 tend,bend,bond,bone,hone,home:14 dint,dine,done,hone,home:3 dump,damp,dame,dome,home:4 spat,spot,soot,hoot,host,hose,home:9 sake,same,some,home:6 easy,ease,case,came,come,home:10 fork,cork,core,come,home:10 curl,cure,core,come,home:1 bond,bone,hone,home:1 boss,loss,lose,hose,home:8 polo,pole,hole,home:2 desk,disk,risk,rise,rose,hose,home:31 bury,burn,born,corn,core,come,home:69 skit,slit,slot,soot,hoot,host,hose,home:46 poem,poet,post,host,hose,home:4 mall,hall,hale,hole,home:8 lick,link,line,lone,hone,home:19 land,lane,lone,hone,home:2 kill,hill,hall,hale,hole,home:25 disk,risk,rise,rose,hose,home:12 held,hold,hole,home:1 posh,pose,hose,home:2 dead,head,held,hold,hole,home:3 line,lone,hone,home:1 damp,dame,dome,home:2 shoo,shot,soot,hoot,host,hose,home:4 pace,pale,hale,hole,home:19 roar,road,goad,gold,hold,hole,home:22 golf,gold,hold,hole,home:2 shot,soot,hoot,host,hose,home:3 fore,core,come,home:6 gulf,golf,gold,hold,hole,home:2 fuss,fuse,ruse,rose,hose,home:17 pout,post,host,hose,home:4 gust,lust,lost,host,hose,home:10 mist,most,host,hose,home:3 spew,sped,seed,heed,held,hold,hole,home:10 cook,cork,core,come,home:8 cell,hell,hall,hale,hole,home:28 dumb,dump,damp,dame,dome,home:4 gash,cash,case,came,come,home:17 call,hall,hale,hole,home:2 blot,boot,hoot,host,hose,home:4 musk,must,most,host,hose,home:16 wish,wise,rise,rose,hose,home:8 mail,hail,hall,hale,hole,home:16 lout,lost,host,hose,home:2 vale,hale,hole,home:3 card,cord,core,come,home:6 goad,gold,hold,hole,home:1 rink,link,line,lone,hone,home:15 room,root,hoot,host,hose,home:9 yule,mule,mole,hole,home:7 hair,hail,hall,hale,hole,home:6 halo,hale,hole,home:2 haul,hall,hale,hole,home:3 bald,bold,hold,hole,home:5 poet,post,host,hose,home:4 surf,sure,sore,some,home:1 bloc,blot,boot,hoot,host,hose,home:6 gill,hill,hall,hale,hole,home:31 seem,seed,heed,held,hold,hole,home:37 gene,gone,hone,home:1 debt,dent,dene,done,hone,home:4 slim,slit,slot,soot,hoot,host,hose,home:12 gong,gone,hone,home:2 long,lone,hone,home:2 sort,sore,some,home:1 fill,hill,hall,hale,hole,home:38 weld,held,hold,hole,home:2 roll,role,hole,home:1 hood,hold,hole,home:1 nice,dice,dime,dome,home:6 just,lust,lost,host,hose,home:8 oink,link,line,lone,hone,home:12 ruse,rose,hose,home:1 sash,cash,case,came,come,home:11 join,coin,corn,core,come,home:4 vamp,camp,came,come,home:11 rain,rail,hail,hall,hale,hole,home:22 wisp,wise,rise,rose,hose,home:6 cork,core,come,home:1 lush,push,posh,pose,hose,home:7 coat,cost,host,hose,home:4 fire,dire,dime,dome,home:23 lair,hair,hail,hall,hale,hole,home:13 nail,hail,hall,hale,hole,home:3 busy,bush,push,posh,pose,hose,home:41 goal,goad,gold,hold,hole,home:4 vane,cane,cone,hone,home:21 tune,tone,hone,home:2 mend,bend,bond,bone,hone,home:13 spud,sped,seed,heed,held,hold,hole,home:23 push,posh,pose,hose,home:2 pour,pout,post,host,hose,home:7 halt,hale,hole,home:3 slow,slot,soot,hoot,host,hose,home:6 lisp,limp,lime,dime,dome,home:8 file,mile,mole,hole,home:12 ramp,camp,came,come,home:14 work,cork,core,come,home:12 fond,bond,bone,hone,home:5 born,corn,core,come,home:12 tang,tong,tone,hone,home:4 lent,dent,dene,done,hone,home:20 solo,sole,hole,home:2 poll,pole,hole,home:2 moot,hoot,host,hose,home:9 rote,dote,dome,home:9 talk,tale,hale,hole,home:6 show,shot,soot,hoot,host,hose,home:5 wool,pool,poll,pole,hole,home:18 flee,fled,feed,heed,held,hold,hole,home:17 most,host,hose,home:1 shed,seed,heed,held,hold,hole,home:10 load,goad,gold,hold,hole,home:19 case,came,come,home:2 fuel,full,hull,hall,hale,hole,home:29 gild,gold,hold,hole,home:1 wise,rise,rose,hose,home:4 went,dent,dene,done,hone,home:23 soot,hoot,host,hose,home:3 cast,cost,host,hose,home:4 gold,hold,hole,home:1 wail,hail,hall,hale,hole,home:8 dupe,dope,hope,home:2 sage,same,some,home:2 null,hull,hall,hale,hole,home:14 gore,core,come,home:7 fail,hail,hall,hale,hole,home:9 boon,born,corn,core,come,home:31 sled,seed,heed,held,hold,hole,home:10 lore,core,come,home:11 mash,cash,case,came,come,home:18 lour,lout,lost,host,hose,home:5 cost,host,hose,home:1 cart,care,core,come,home:5 slam,slat,slot,soot,hoot,host,hose,home:53 tail,hail,hall,hale,hole,home:15 lure,cure,core,come,home:17 cake,coke,come,home:6 worm,wore,core,come,home:10 mace,male,hale,hole,home:22 band,bond,bone,hone,home:2 loud,lord,cord,core,come,home:16 hill,hall,hale,hole,home:3 yell,hell,hall,hale,hole,home:24 nick,nice,dice,dime,dome,home:12 stem,seem,seed,heed,held,hold,hole,home:38 seen,seed,heed,held,hold,hole,home:42 film,file,mile,mole,hole,home:12 loss,lose,hose,home:1 mile,mole,hole,home:3 mold,hold,hole,home:3 bead,head,held,hold,hole,home:5 boom,boot,hoot,host,hose,home:15 bold,hold,hole,home:2 worn,corn,core,come,home:12 rail,hail,hall,hale,hole,home:4 welt,weld,held,hold,hole,home:16 ease,case,came,come,home:9 trot,toot,hoot,host,hose,home:4 fuse,ruse,rose,hose,home:3 dent,dene,done,hone,home:4 fort,sort,sore,some,home:10 dark,dare,dame,dome,home:6 spay,spat,spot,soot,hoot,host,hose,home:23 dene,done,hone,home:4 fall,hall,hale,hole,home:2 bale,hale,hole,home:3 salt,halt,hale,hole,home:9 link,line,lone,hone,home:1 slot,soot,hoot,host,hose,home:3 gall,hall,hale,hole,home:5 mull,mule,mole,hole,home:4 flit,slit,slot,soot,hoot,host,hose,home:11 data,date,dote,dome,home:4 well,hell,hall,hale,hole,home:27 sped,seed,heed,held,hold,hole,home:10 shun,shut,shot,soot,hoot,host,hose,home:34 malt,halt,hale,hole,home:10 dine,done,hone,home:3 lust,lost,host,hose,home:2 pact,past,post,host,hose,home:36 dare,dame,dome,home:4 pill,poll,pole,hole,home:4 pool,poll,pole,hole,home:3 bash,cash,case,came,come,home:35 bore,core,come,home:8 bail,hail,hall,hale,hole,home:12 full,hull,hall,hale,hole,home:16 cane,cone,hone,home:4 foam,form,fore,core,come,home:9 seed,heed,held,hold,hole,home:7 rich,rice,dice,dime,dome,home:10 rude,rode,code,come,home:10 last,lost,host,hose,home:5 trow,trot,toot,hoot,host,hose,home:8 past,post,host,hose,home:6 shod,shot,soot,hoot,host,hose,home:4 need,heed,held,hold,hole,home:4 hush,push,posh,pose,hose,home:10 rode,code,come,home:7 safe,same,some,home:2 spot,soot,hoot,host,hose,home:3 lane,lone,hone,home:2 rend,bend,bond,bone,hone,home:8 moat,most,host,hose,home:7 rule,role,hole,home:1 vise,rise,rose,hose,home:4 blew,blow,blot,boot,hoot,host,hose,home:22 wipe,pipe,pope,hope,home:5 camp,came,come,home:3 bird,bind,bond,bone,hone,home:4 half,hale,hole,home:2 blow,blot,boot,hoot,host,hose,home:7 gull,hull,hall,hale,hole,home:19 rite,rote,dote,dome,home:24 cash,case,came,come,home:2 clad,glad,goad,gold,hold,hole,home:3 left,loft,lost,host,hose,home:6 hail,hall,hale,hole,home:3 loge,lone,hone,home:6 life,lime,dime,dome,home:8 roam,foam,form,fore,core,come,home:29 cord,core,come,home:1 seek,seed,heed,held,hold,hole,home:34 dung,dune,done,hone,home:3 will,hill,hall,hale,hole,home:47 much,mush,push,posh,pose,hose,home:52 reed,heed,held,hold,hole,home:4 tall,hall,hale,hole,home:10 sift,soft,sort,sore,some,home:3 deny,dene,done,hone,home:6 lost,host,hose,home:2 dice,dime,dome,home:1 main,mail,hail,hall,hale,hole,home:49 slew,slow,slot,soot,hoot,host,hose,home:17 ooze,doze,dome,home:1 slay,slat,slot,soot,hoot,host,hose,home:18 list,lost,host,hose,home:3 task,talk,tale,hale,hole,home:16 soft,sort,sore,some,home:2 maul,haul,hall,hale,hole,home:14 ride,rode,code,come,home:20 wall,hall,hale,hole,home:5 rift,rife,rise,rose,hose,home:8 bind,bond,bone,hone,home:2 rife,rise,rose,hose,home:8 lice,dice,dime,dome,home:11 lift,loft,lost,host,hose,home:15 trod,trot,toot,hoot,host,hose,home:14 spec,sped,seed,heed,held,hold,hole,home:10 goat,coat,cost,host,hose,home:21 lord,cord,core,come,home:13 dirt,dire,dime,dome,home:2 form,fore,core,come,home:8 loft,lost,host,hose,home:2 beak,bead,head,held,hold,hole,home:25 shut,shot,soot,hoot,host,hose,home:9 pull,poll,pole,hole,home:4 sale,hale,hole,home:6 lint,line,lone,hone,home:1 calf,half,hale,hole,home:2 loom,loot,hoot,host,hose,home:19 toot,hoot,host,hose,home:4 mush,push,posh,pose,hose,home:12 hall,hale,hole,home:2 mild,mold,hold,hole,home:6 riot,root,hoot,host,hose,home:2 hell,hall,hale,hole,home:7 cold,hold,hole,home:3 hull,hall,hale,hole,home:3 mill,mile,mole,hole,home:5 cave,came,come,home:6 wire,dire,dime,dome,home:25 jail,hail,hall,hale,hole,home:4 vice,dice,dime,dome,home:4 cage,came,come,home:2 thin,chin,coin,corn,core,come,home:10 fair,hair,hail,hall,hale,hole,home:17 slob,slot,soot,hoot,host,hose,home:7 gosh,posh,pose,hose,home:4 mast,most,host,hose,home:2 sill,hill,hall,hale,hole,home:38 foot,hoot,host,hose,home:2 milk,mile,mole,hole,home:3 deft,dent,dene,done,hone,home:7 lode,code,come,home:8 pest,post,host,hose,home:4 care,core,come,home:4 ball,hall,hale,hole,home:6 fell,hell,hall,hale,hole,home:22 balm,bale,hale,hole,home:6 saga,sage,same,some,home:2 wing,wine,dine,done,hone,home:45 tale,hale,hole,home:6 slab,slob,slot,soot,hoot,host,hose,home:26 fine,dine,done,hone,home:19 cafe,came,come,home:2 shoe,shot,soot,hoot,host,hose,home:4 rust,ruse,rose,hose,home:1 deed,heed,held,hold,hole,home:4 gale,hale,hole,home:3 save,same,some,home:4 dean,dead,head,held,hold,hole,home:20 coin,corn,core,come,home:3 lend,bend,bond,bone,hone,home:12 gang,gong,gone,hone,home:5 loot,hoot,host,hose,home:4 wine,dine,done,hone,home:20 lull,hull,hall,hale,hole,home:26 rent,dent,dene,done,hone,home:14 dune,done,hone,home:2 wore,core,come,home:8 wood,hood,hold,hole,home:2 nine,none,hone,home:2 silk,milk,mile,mole,hole,home:13 mood,hood,hold,hole,home:5 lime,dime,dome,home:4 boot,hoot,host,hose,home:4 cape,cope,hope,home:4 base,case,came,come,home:16 cure,core,come,home:1 runt,rust,ruse,rose,hose,home:16 laid,land,lane,lone,hone,home:3 root,hoot,host,hose,home:2 dive,dove,dome,home:4 feed,heed,held,hold,hole,home:5 diet,dint,dine,done,hone,home:8 sail,hail,hall,hale,hole,home:11 hoax,coax,coat,cost,host,hose,home:11 copy,cope,hope,home:2".split(" ").map(p => { const [route, ways] = p.split(":"); return { route: route.split(","), ways: +ways }; });
+function puzzleFor(day) { const n = PUZZLES.length; return PUZZLES[(((day - LAUNCH_DAY) % n) + n) % n]; }
+function startFor(day) { return puzzleFor(day).route[0]; }
+function noOf(day) { return day - LAUNCH_DAY + 1; }
+// The day on the board: today, or a past day picked from the archive
+let playDay = dayIdx;
+let START = startFor(playDay);
+let BEST = puzzleFor(playDay).route.length - 1;
+
+// The address put in shared results. Set once in build.js; if empty, the game uses its own address when on its own domain.
+const SITE_URL = "https://playdoorstep.com/";
+
+// State, saved per puzzle in this browser
+const STATS_KEY = "ladderHome";
+function dayKey(day) { return "ladderHome-day-" + day; }
+function store(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
+function load(key, def) { try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
+// What this browser remembers about a day's puzzle, or null.
+// Stored data is never trusted: it is only used if it is a real game for that day, where every entry is a
+// word from the game's own list and each differs from the one before by one letter. Anything else is ignored,
+// so a damaged or tampered save can neither break the page nor put its own markup on it.
+function savedDay(day) {
+  const s = load(dayKey(day), null), start = startFor(day);
+  if (!s || typeof s !== "object" || s.start !== start) return null;
+  const p = s.path;
+  if (!Array.isArray(p) || p.length < 1 || p.length > 500 || p[0] !== start) return null;
+  for (let i = 0; i < p.length; i++) {
+    if (typeof p[i] !== "string" || !WORD_SET.has(p[i])) return null;
+    if (i > 0 && diffCount(p[i], p[i - 1]) !== 1) return null;
+  }
+  const finished = s.finished === true && p[p.length - 1] === TARGET;
+  return { path: p.slice(), finished, solved: finished && s.solved === true };
+}
+
+let path, finished, solvedToday;
+let buf = "";          // letters typed into the open row
+// Put a day's puzzle on the board, picking up where the player left it
+function loadPuzzle(day) {
+  playDay = day;
+  START = startFor(day);
+  BEST = puzzleFor(day).route.length - 1;
+  const s = savedDay(day);
+  path = s ? s.path : [START];
+  finished = s ? s.finished : false;
+  solvedToday = s ? s.solved : false;
+  buf = "";
+}
+loadPuzzle(dayIdx);
+function saveDay() { store(dayKey(playDay), { start: START, path, finished, solved: solvedToday }); }
+
+const $ = id => document.getElementById(id);
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function setMsg(text) { $("msg").textContent = text; }
+function diffCount(a, b) { let d = 0; for (let i = 0; i < 4; i++) if (a[i] !== b[i]) d++; return d; }
+function tileHtml(c, k) { return `<span class="tile${c === TARGET[k] ? " match" : ""}">${c}</span>`; }
+
+// The four cells of the row being typed
+function entryHtml(how) {
+  let h = "";
+  for (let k = 0; k < 4; k++) {
+    h += k < buf.length
+      ? `<span class="tile typed${how === "pop" && k === buf.length - 1 ? " pop" : ""}">${buf[k]}</span>`
+      : `<span class="gap${k === buf.length ? " next" : ""}"></span>`;
+  }
+  return h;
+}
+function entryLabel() { return buf ? "Your next word so far: " + buf.toUpperCase() : "Your next word: empty"; }
+// Redraw only the row being typed; placed rows are left alone so their animation is never cut off
+function renderEntry(how) {
+  const li = $("entry");
+  if (!li) return;
+  li.classList.remove("rejected");
+  li.setAttribute("aria-label", entryLabel());
+  li.innerHTML = entryHtml(how);
+}
+
+// how: "placed" when a word was just accepted, "arrive" on reaching HOME, "pop" when a letter was just typed
+function renderRows(how) {
+  const ol = $("rows");
+  ol.innerHTML = "";
+  path.forEach((w, i) => {
+    const li = document.createElement("li");
+    if (i === path.length - 1 && (how === "placed" || how === "arrive")) li.className = how;
+    li.setAttribute("aria-label", (i === 0 ? "Start: " : "Step " + i + ": ") + w.toUpperCase());
+    li.innerHTML = w.split("").map(tileHtml).join("");
+    ol.appendChild(li);
+  });
+  if (!finished) {
+    const li = document.createElement("li");
+    // after an accepted word the new row fades in; on any other redraw it is simply there
+    li.className = how === "placed" ? "entry fresh" : "entry";
+    li.id = "entry";
+    li.setAttribute("aria-label", entryLabel());
+    li.innerHTML = entryHtml(how);
+    ol.appendChild(li);
+  }
+}
+
+function nextInText() {
+  const now = new Date(), ms = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1) - now;
+  const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000);
+  return `Next word in ${h} h ${m} min.`;
+}
+
+// Show or hide the keyboard panel. On the solve it slides away; otherwise it switches instantly.
+function showGround(show, slide) {
+  const g = $("ground");
+  if (show || !slide || reduced || g.hidden) {
+    g.classList.remove("leaving");
+    g.hidden = !show;
+    return;
+  }
+  g.classList.add("leaving");
+  setTimeout(() => {
+    g.classList.remove("leaving");
+    if (finished) g.hidden = true;
+  }, 260);
+}
+
+function render(how) {
+  renderRows(how);
+  const past = playDay !== dayIdx;
+  $("pnum").textContent = `#${noOf(playDay)}: ${START.toUpperCase()}`;
+  $("past").hidden = !past;
+  $("todayBtn").hidden = !(past && finished);
+  $("shareNote").hidden = $("shareText").hidden = true;
+  showGround(!finished, how === "arrive");
+  $("msg").hidden = finished;
+  $("done").hidden = !finished;
+  $("door").classList.toggle("open", finished && solvedToday);
+  if (finished) {
+    const steps = path.length - 1, over = solvedToday && steps > BEST;
+    if (solvedToday) {
+      const quip = !over ? "Straight to the door." : steps - BEST <= 2 ? "You took the scenic route." : "Dinner's gone cold.";
+      $("doneTitle").textContent = `Home in ${steps} step${steps === 1 ? "" : "s"}. ${quip}`;
+      $("doneSub").textContent = over
+        ? `The shortest route home takes ${BEST} steps. You took ${steps - BEST} more.`
+        : "You took the shortest route home.";
+    } else {
+      // a puzzle given up on before "Show solution" was removed
+      $("doneTitle").textContent = "The door stays shut today.";
+      $("doneSub").textContent = "A shortest route is on the wall above.";
+    }
+    // After a longer route, offer the best one
+    $("bestBtn").hidden = !over;
+    $("bestBtn").textContent = `See the ${BEST}-step route`;
+    $("nextIn").textContent = past ? "Past puzzles don't change your streak." : nextInText();
+  }
+  $("knock").disabled = finished;
+  clearTimeout(matTimer);
+  clearTimeout(matSwap);
+  $("mat").classList.remove("swap");
+  $("mat").textContent = matText();
+  const s = stats();
+  $("played").textContent = s.played;
+  $("solved").textContent = s.solved;
+  // a streak only counts while it is still alive: solved today or yesterday
+  $("streak").textContent = s.lastSolved >= dayIdx - 1 ? s.streak : 0;
+}
+
+const NO_STATS = { played: 0, solved: 0, streak: 0, lastSolved: -2, lastPlayed: -1 };
+// Totals from storage, keeping only whole numbers; anything else falls back to the starting value
+function stats() {
+  const raw = load(STATS_KEY, null), s = {};
+  for (const k in NO_STATS) s[k] = raw && Number.isInteger(raw[k]) ? raw[k] : NO_STATS[k];
+  return s;
+}
+// A day counts as played from the first word entered
+function markPlayed() {
+  if (playDay !== dayIdx) return;   // past puzzles never touch the totals
+  const s = stats();
+  if (s.lastPlayed === dayIdx) return;
+  s.played += 1;
+  s.lastPlayed = dayIdx;
+  store(STATS_KEY, s);
+}
+
+function keepInView(el) { if (el && el.scrollIntoView) el.scrollIntoView({ block: "nearest", behavior: reduced ? "auto" : "smooth" }); }
+
+function finishPuzzle() {
+  finished = true;
+  solvedToday = true;
+  buf = "";
+  markPlayed();
+  const s = stats();
+  if (playDay === dayIdx && s.lastSolved !== dayIdx) {
+    s.solved += 1;
+    s.streak = (s.lastSolved === dayIdx - 1) ? s.streak + 1 : 1;
+    s.lastSolved = dayIdx;
+    store(STATS_KEY, s);
+  }
+  saveDay();
+  render("arrive");
+  keepInView($("done"));
+}
+
+// The doormat and the cat comment on how it's going
+let matTimer = 0, catTimer = 0, knocks = 0;
+function matText() {
+  if (!finished) return "Not yet";
+  if (!solvedToday) return "Tomorrow";
+  return path.length - 1 > BEST ? "You're late" : "Welcome";
+}
+let matSwap = 0;
+// Change the mat's words with a quick dip, so it reads as the mat changing its mind
+function setMat(text) {
+  const m = $("mat");
+  clearTimeout(matSwap);
+  if (reduced || m.textContent === text) { m.classList.remove("swap"); m.textContent = text; return; }
+  m.classList.add("swap");
+  matSwap = setTimeout(() => { m.textContent = text; m.classList.remove("swap"); }, 120);
+}
+function matSay(text, ms) {
+  clearTimeout(matTimer);
+  setMat(text);
+  matTimer = setTimeout(() => setMat(matText()), ms);
+}
+function catMood(mood, ms) {
+  clearTimeout(catTimer);
+  $("cat").dataset.mood = mood;
+  catTimer = setTimeout(() => { delete $("cat").dataset.mood; }, ms);
+}
+const KNOCKS = [
+  "It's locked. Spelling is the key.",
+  "Nobody's answering. Try a word.",
+  "The cat isn't going to open it.",
+  "Knocking louder won't help. HOME will.",
+  "The doorbell's broken. So is that plan.",
+  "Who is it? Oh. Still you.",
+  "The key is under the mat. The mat says not yet.",
+  "This door only opens for four letters.",
+  "The cat has seen your spelling. The door stays shut.",
+  "You can't knock your way home. People have tried.",
+  "The neighbours are starting to look.",
+  "Password? It rhymes with DOME.",
+  "No salesmen. No shortcuts.",
+  "Still locked. It's a door. That's its whole job.",
+  "The cat says try the window. The cat is lying.",
+  "Somebody's home. They're waiting for the right word.",
+  "That was a good knock. Wrong game, though.",
+  "Fine. Knock again. See what happens.",
+  "Nothing happened.",
+];
+$("knock").addEventListener("click", () => {
+  if (finished) return;
+  setMsg(KNOCKS[knocks++ % KNOCKS.length]);
+  catMood("nope", 1000);
+  if (reduced) return;
+  const door = $("door");
+  door.classList.remove("rattle");
+  void door.offsetWidth;
+  door.classList.add("rattle");
+});
+
+function reject(text) {
+  setMsg(text);
+  matSay("Nope", 1300);
+  catMood("nope", 1100);
+  const row = $("entry");
+  if (!row || reduced) return;
+  // clear "fresh" too: it outranks the shake, so the shake would never play on a brand-new row
+  row.classList.remove("rejected", "fresh");
+  void row.offsetWidth;
+  row.classList.add("rejected");
+}
+
+function typeLetter(c) {
+  if (finished || buf.length >= 4) return;
+  buf += c;
+  setMsg("");
+  renderEntry("pop");
+}
+function backspace() {
+  if (finished || !buf) return;
+  buf = buf.slice(0, -1);
+  setMsg("");
+  renderEntry("");
+}
+function submit() {
+  if (finished) return;
+  const cur = path[path.length - 1], g = buf;
+  if (g.length < 4) { reject(g ? `Four letters needed. That's ${g.length}.` : "Type a four-letter word first."); return; }
+  if (g === cur) { reject(`You're already standing on ${g.toUpperCase()}.`); return; }
+  if (diffCount(g, cur) !== 1) { reject(`One tile at a time: change exactly one letter of ${cur.toUpperCase()}.`); return; }
+  if (!WORD_SET.has(g)) { reject(`${g.toUpperCase()} isn't a word. The cat checked.`); return; }
+  // Going back to an earlier word is allowed: it is the only way to back out, and it costs a step
+  path.push(g);
+  buf = "";
+  setMsg("");
+  if (g === TARGET) { finishPuzzle(); return; }
+  markPlayed();
+  saveDay();
+  catMood("pleased", 700);
+  render("placed");
+  keepInView($("entry"));
+}
+
+// On-screen keyboard
+const BACK_ICON = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5h11v14H9l-6-7z"/><path d="M12.5 9.5l5 5M17.5 9.5l-5 5"/></svg>';
+function addKey(row, id, label, html, cls, fn) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "key" + (cls ? " " + cls : ""); b.id = id; b.innerHTML = html;
+  b.setAttribute("aria-label", label);
+  // keep focus off the key so a physical Enter never presses it again
+  b.addEventListener("click", () => { fn(); b.blur(); });
+  row.appendChild(b);
+}
+["qwertyuiop", "asdfghjkl", "zxcvbnm"].forEach((letters, r) => {
+  const row = document.createElement("div");
+  if (r === 2) addKey(row, "key-enter", "Enter", "Enter", "wide enter", submit);
+  for (const c of letters) addKey(row, "key-" + c, "Letter " + c.toUpperCase(), c, "", () => typeLetter(c));
+  if (r === 2) addKey(row, "key-back", "Delete letter", BACK_ICON, "wide", backspace);
+  $("tray").appendChild(row);
+});
+
+document.addEventListener("keydown", e => {
+  if (finished || document.querySelector("dialog[open]") || e.ctrlKey || e.metaKey || e.altKey) return;
+  // Enter on a focused button or link must do that control's own job, not submit a guess
+  const k = e.key, onButton = e.target instanceof Element && !!e.target.closest("a, button");
+  if (/^[a-zA-Z]$/.test(k)) { e.preventDefault(); typeLetter(k.toLowerCase()); }
+  else if (k === "Backspace") { e.preventDefault(); backspace(); }
+  else if (k === "Enter" && !onButton) { e.preventDefault(); submit(); }
+});
+
+// Sharing: the result as a grid of tiles plus a dare for whoever receives it.
+// {n} is the player's step count, {b} the shortest possible.
+const DARES = {
+  shortest: [
+    "I got home in {n} steps, the shortest route there is. You can tie me. You can't beat me.",
+    "Home in {n}, and nobody can do it in fewer. Your move.",
+    "{n} steps. Shortest possible. I'll wait while you try.",
+  ],
+  close: [
+    "I got home in {n} steps. It can be done in {b}. Go on, show me up.",
+    "Home in {n}. The shortest way is {b}, so yes, you can beat me. You won't.",
+    "{n} steps. A wrong turn or two. Bet you take three.",
+  ],
+  far: [
+    "I got home in {n} steps. It can be done in {b}. Don't ask what happened.",
+    "Home in {n}. The cat got bored. Surely you can do better. Surely.",
+    "{n} steps to get home. I took the scenic route. Beat that, it isn't hard.",
+  ],
+};
+// Where to send people. Uses SITE_URL if set; otherwise the page's own address once it is on its own domain.
+function gameLink() {
+  if (SITE_URL) return SITE_URL;
+  const host = location.hostname;
+  if (!/^https?:$/.test(location.protocol) || /^(localhost|127\.|\[::1\])/.test(host) || /(claude\.ai|claudeusercontent\.com|anthropic\.com)$/.test(host)) return "";
+  return location.origin + location.pathname.replace(/index\.html$/, "");
+}
+function shareText() {
+  const steps = path.length - 1, no = noOf(playDay);
+  // one row per word: blue for a letter already in its HOME place, white for the rest. No letters, so no spoilers.
+  const grid = path.map(w => w.split("").map((c, k) => c === TARGET[k] ? "\u{1F7E6}" : "⬜").join("")).join("\n");
+  let dare = "I didn't make it home today. Your turn.";
+  if (solvedToday) {
+    const tier = steps <= BEST ? "shortest" : steps - BEST <= 2 ? "close" : "far";
+    dare = DARES[tier][no % DARES[tier].length].replace("{n}", steps).replace("{b}", BEST);
+  }
+  const link = gameLink();
+  return `Doorstep #${no}: ${START.toUpperCase()} to HOME\n${grid}\n${dare}` + (link ? "\n" + link : "");
+}
+function shareNote(text) { $("shareNote").textContent = text; $("shareNote").hidden = false; }
+$("shareBtn").addEventListener("click", async () => {
+  const text = shareText();
+  // Phones: hand it to the share sheet. A cancelled sheet is not an error.
+  if (navigator.share) {
+    try { await navigator.share({ text }); return; }
+    catch (e) { if (e && e.name === "AbortError") return; }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    $("shareBtn").textContent = "Copied";
+    setTimeout(() => { $("shareBtn").textContent = "Share result"; }, 1800);
+    shareNote("Copied. Paste it to someone who thinks they're good with words.");
+  } catch (e) {
+    // No clipboard access: show the message so it can be selected and copied by hand
+    $("shareText").textContent = text;
+    $("shareText").hidden = false;
+    shareNote("Couldn't copy it for you. Select the message below and copy it.");
+  }
+});
+
+// Pop-ups
+// The best route for today's word, offered after a longer solve
+function openBest() {
+  const { route, ways } = puzzleFor(playDay);
+  $("yestTitle").textContent = `The best route: ${BEST} steps`;
+  $("yestText").textContent = ways === 1 ? "There was only one way to do it. Here it is:" : `There were ${ways} ways to do it. Here is one:`;
+  $("yestRows").innerHTML = route.map(w => "<li>" + w.split("").map(tileHtml).join("") + "</li>").join("");
+  $("yestRows").setAttribute("aria-label", route.join(", ").toUpperCase());
+  $("yestRows").hidden = $("yestMine").hidden = false;
+  $("yestMine").textContent = `You took ${path.length - 1}.`;
+  $("yestDlg").showModal();
+}
+
+function openYesterday() {
+  $("yestRows").hidden = $("yestMine").hidden = puzzleNo <= 1;
+  if (puzzleNo <= 1) {
+    $("yestTitle").textContent = "No yesterday yet";
+    $("yestText").textContent = "Today is puzzle #1. Come back tomorrow to see how today's could have gone.";
+    $("yestDlg").showModal();
+    return;
+  }
+  const { route, ways } = puzzleFor(dayIdx - 1), yStart = route[0], n = route.length - 1;
+  $("yestTitle").textContent = `Yesterday: #${puzzleNo - 1}, ${yStart.toUpperCase()}`;
+  $("yestText").textContent = `The shortest route was ${n} steps, and ` +
+    (ways === 1 ? "there was only one way to do it. Here it is:" : `there were ${ways} ways to do it. Here is one:`);
+  $("yestRows").innerHTML = route.map(w => "<li>" + w.split("").map(tileHtml).join("") + "</li>").join("");
+  $("yestRows").setAttribute("aria-label", route.join(", ").toUpperCase());
+  const mine = savedDay(dayIdx - 1);
+  const played = mine && mine.finished;
+  $("yestMine").hidden = !played;
+  if (played) $("yestMine").textContent = mine.solved ? `You got home in ${mine.path.length - 1}.` : "You didn't make it home.";
+  $("yestDlg").showModal();
+}
+// The archive: every puzzle that has already had its day, newest first
+function openPast() {
+  const list = $("pastList");
+  list.innerHTML = "";
+  for (let day = dayIdx - 1; day >= LAUNCH_DAY; day--) {
+    const s = savedDay(day);
+    const state = s && s.finished && s.solved ? `Home in ${s.path.length - 1}` : s && s.path.length > 1 ? "Started" : "Not played";
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.type = "button";
+    b.innerHTML = `<b>#${noOf(day)}: ${startFor(day).toUpperCase()}</b><span>${state}</span>`;
+    b.addEventListener("click", () => { $("pastDlg").close(); showDay(day); });
+    li.appendChild(b);
+    list.appendChild(li);
+  }
+  $("pastNone").hidden = dayIdx > LAUNCH_DAY;
+  list.hidden = dayIdx <= LAUNCH_DAY;
+  $("pastDlg").showModal();
+}
+// Swap the board to another day without replaying the door swing
+function showDay(day) {
+  loadPuzzle(day);
+  setMsg("");
+  const door = $("door");
+  door.classList.add("still");
+  render("");
+  if (!finished) requestAnimationFrame(() => requestAnimationFrame(() => door.classList.remove("still")));
+  scrollTo(0, 0);
+}
+document.querySelectorAll("[data-today]").forEach(b => b.addEventListener("click", () => showDay(dayIdx)));
+
+document.querySelectorAll("[data-open]").forEach(b => b.addEventListener("click", () => {
+  if (b.dataset.open === "yest") openYesterday();
+  else if (b.dataset.open === "best") openBest();
+  else if (b.dataset.open === "past") openPast();
+  else $("howDlg").showModal();
+}));
+document.querySelectorAll("dialog").forEach(d => {
+  d.addEventListener("click", e => { if (e.target === d || e.target.closest("[data-close]")) d.close(); });
+});
+
+// A finished puzzle reopens with the door already open, no replay of the swing
+if (finished) $("door").classList.add("still");
+render("");
+
+// A page left open past midnight offers the new day's word instead of quietly showing yesterday's
+function checkDay() {
+  if (finished && playDay === dayIdx) $("nextIn").textContent = nextInText();
+  if (today() !== dayIdx) $("fresh").hidden = false;
+}
+$("fresh").addEventListener("click", () => location.reload());
+setInterval(checkDay, 30000);
+document.addEventListener("visibilitychange", checkDay);
+</script>
+</body>
+</html>

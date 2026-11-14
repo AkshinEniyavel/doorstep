@@ -247,6 +247,21 @@
   .done p { margin: 0; font-size: 15px; color: var(--on-wall-soft); }
   .done .route { font-family: var(--display); font-weight: 600; letter-spacing: .06em; color: var(--on-wall); }
   button.plaque { border: 0; min-height: 44px; font-size: 15px; letter-spacing: .08em; padding: 12px 22px 11px; margin-top: 4px; }
+  /* Share pop-up: the message previewed on a piece of the wall, as blank tiles */
+  .card { margin: 14px 0 6px; padding: 16px 14px 14px; border-radius: 8px; color: var(--on-wall); background: var(--brick) var(--wall-img) center / 120px 60px; box-shadow: inset 0 0 0 2px var(--mortar), 0 3px 8px var(--shadow); }
+  .card .cardhead { margin: 0; font-family: var(--display); font-weight: 800; font-size: 15px; line-height: 1.3; letter-spacing: .08em; text-transform: uppercase; }
+  .card .mini { margin: 12px 0; gap: 5px; }
+  .card .mini li { gap: 4px; }
+  .card .mini .tile { width: 26px; height: 30px; border-radius: 4px; box-shadow: inset 0 0 0 2px var(--cobalt), 0 2px 3px var(--shadow); }
+  .card .mini .tile.match { box-shadow: inset 0 0 0 2px var(--on-cobalt), 0 2px 3px var(--shadow); }
+  .card .carddare { margin: 0; min-height: 2.8em; font-size: 16px; font-weight: 500; line-height: 1.4; text-wrap: balance; }
+  .linkish { border: 0; background: none; min-height: 40px; padding: 8px 10px; font-size: 14px; font-weight: 700; color: var(--cobalt); text-decoration: underline; text-underline-offset: 3px; }
+  .sends { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin: 6px 0 12px; }
+  .sends button.plaque { margin-top: 0; }
+  .sends .brass { display: inline-flex; align-items: center; border: 0; min-height: 44px; padding: 10px 16px; font-size: 14px; font-weight: 700; color: var(--on-brass); text-decoration: none; transition: transform 160ms ease-out; }
+  .sends .brass:active { transform: scale(0.97); }
+  .sheet :focus-visible { outline-color: var(--cobalt); }
+  .sheet .sharetext { color: var(--ink); background: rgb(27 61 146 / .08); margin-bottom: 10px; }
   /* the share message, shown only when it could not be copied automatically */
   .sharetext { margin: 0; max-width: 100%; padding: 10px 12px; text-align: left; font: 14px/1.45 var(--text); white-space: pre-wrap; overflow-wrap: anywhere; color: var(--on-wall); background: rgb(0 0 0 / .28); border-radius: 6px; user-select: all; -webkit-user-select: all; }
   button.plaque, .past button { transition: transform 160ms ease-out; }
@@ -415,8 +430,6 @@
         <button class="brass" id="todayBtn" type="button" data-today hidden>Back to today</button>
       </div>
       <button class="plaque" id="shareBtn" type="button">Share result</button>
-      <p id="shareNote" role="status" hidden></p>
-      <pre class="sharetext" id="shareText" hidden></pre>
       <p id="nextIn"></p>
     </div>
     <div class="brass stats">
@@ -472,6 +485,27 @@
     <p>Everyone gets the same start word each day. When you finish, you'll see if you found the shortest route.</p>
     <p class="meta">The cat on the step is only watching. It has opinions.</p>
     <button class="plaque" type="button" data-close>Start playing</button>
+  </div>
+</dialog>
+
+<dialog id="shareDlg" aria-labelledby="shareTitle">
+  <div class="sheet">
+    <button class="close" type="button" data-close aria-label="Close"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <h2 id="shareTitle">Share your result</h2>
+    <div class="card">
+      <p class="cardhead" id="shareHead"></p>
+      <ol class="mini" id="shareGrid"></ol>
+      <p class="carddare" id="shareDare"></p>
+    </div>
+    <button class="linkish" id="dareBtn" type="button">Try another line</button>
+    <div class="sends">
+      <button class="plaque" id="copyBtn" type="button">Copy message</button>
+      <a class="brass" id="shareWa" target="_blank" rel="noopener">WhatsApp</a>
+      <button class="brass" id="shareNative" type="button" hidden>More ways</button>
+    </div>
+    <p class="meta" id="shareStatus" role="status"></p>
+    <pre class="sharetext" id="shareRaw" hidden></pre>
+    <p class="meta">The tiles show no letters, so your message won't spoil the puzzle.</p>
   </div>
 </dialog>
 
@@ -632,7 +666,6 @@ function render(how) {
   $("pnum").textContent = `#${noOf(playDay)}: ${START.toUpperCase()}`;
   $("past").hidden = !past;
   $("todayBtn").hidden = !(past && finished);
-  $("shareNote").hidden = $("shareText").hidden = true;
   showGround(!finished, how === "arrive");
   $("msg").hidden = finished;
   $("done").hidden = !finished;
@@ -857,37 +890,56 @@ function gameLink() {
   if (!/^https?:$/.test(location.protocol) || /^(localhost|127\.|\[::1\])/.test(host) || /(claude\.ai|claudeusercontent\.com|anthropic\.com)$/.test(host)) return "";
   return location.origin + location.pathname.replace(/index\.html$/, "");
 }
+let dareIdx = 0;   // which dare line is chosen in the share pop-up
+function dareLine() {
+  if (!solvedToday) return "I didn't make it home today. Your turn.";
+  const steps = path.length - 1;
+  const list = DARES[steps <= BEST ? "shortest" : steps - BEST <= 2 ? "close" : "far"];
+  return list[dareIdx % list.length].replace("{n}", steps).replace("{b}", BEST);
+}
+function shareHead() { return `Doorstep #${noOf(playDay)}: ${START.toUpperCase()} to HOME`; }
+// The message as plain text, for copying and for other apps
 function shareText() {
-  const steps = path.length - 1, no = noOf(playDay);
   // one row per word: blue for a letter already in its HOME place, white for the rest. No letters, so no spoilers.
   const grid = path.map(w => w.split("").map((c, k) => c === TARGET[k] ? "\u{1F7E6}" : "⬜").join("")).join("\n");
-  let dare = "I didn't make it home today. Your turn.";
-  if (solvedToday) {
-    const tier = steps <= BEST ? "shortest" : steps - BEST <= 2 ? "close" : "far";
-    dare = DARES[tier][no % DARES[tier].length].replace("{n}", steps).replace("{b}", BEST);
-  }
   const link = gameLink();
-  return `Doorstep #${no}: ${START.toUpperCase()} to HOME\n${grid}\n${dare}` + (link ? "\n" + link : "");
+  return `${shareHead()}\n${grid}\n${dareLine()}` + (link ? "\n" + link : "");
 }
-function shareNote(text) { $("shareNote").textContent = text; $("shareNote").hidden = false; }
-$("shareBtn").addEventListener("click", async () => {
+
+// The share pop-up: the message previewed on a piece of the wall, a choice of dare, and ways to send it
+function renderShare() {
+  $("shareHead").textContent = shareHead();
+  $("shareGrid").innerHTML = path.map(w => "<li>" + w.split("").map((c, k) => `<span class="tile${c === TARGET[k] ? " match" : ""}"></span>`).join("") + "</li>").join("");
+  $("shareGrid").setAttribute("aria-label", `Your ${path.length - 1} steps, shown as tiles without letters`);
+  $("shareDare").textContent = dareLine();
+  $("shareWa").href = "https://wa.me/?text=" + encodeURIComponent(shareText());
+  $("shareStatus").textContent = "";
+  $("shareRaw").hidden = true;
+}
+$("shareBtn").addEventListener("click", () => {
+  dareIdx = noOf(playDay);
+  $("dareBtn").hidden = !solvedToday;
+  $("shareNative").hidden = !navigator.share;
+  renderShare();
+  $("shareDlg").showModal();
+});
+$("dareBtn").addEventListener("click", () => { dareIdx++; renderShare(); });
+$("copyBtn").addEventListener("click", async () => {
   const text = shareText();
-  // Phones: hand it to the share sheet. A cancelled sheet is not an error.
-  if (navigator.share) {
-    try { await navigator.share({ text }); return; }
-    catch (e) { if (e && e.name === "AbortError") return; }
-  }
   try {
     await navigator.clipboard.writeText(text);
-    $("shareBtn").textContent = "Copied";
-    setTimeout(() => { $("shareBtn").textContent = "Share result"; }, 1800);
-    shareNote("Copied. Paste it to someone who thinks they're good with words.");
+    $("shareStatus").textContent = "Copied. Paste it to someone who thinks they're good with words.";
   } catch (e) {
     // No clipboard access: show the message so it can be selected and copied by hand
-    $("shareText").textContent = text;
-    $("shareText").hidden = false;
-    shareNote("Couldn't copy it for you. Select the message below and copy it.");
+    $("shareRaw").textContent = text;
+    $("shareRaw").hidden = false;
+    $("shareStatus").textContent = "Couldn't copy it for you. Select the message below and copy it.";
   }
+});
+// Phones: hand the message to the device's own share menu. Closing that menu is not an error.
+$("shareNative").addEventListener("click", async () => {
+  try { await navigator.share({ text: shareText() }); }
+  catch (e) { if (!e || e.name !== "AbortError") $("shareStatus").textContent = "Sharing isn't available here. Use Copy message."; }
 });
 
 // Pop-ups

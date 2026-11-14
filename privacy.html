@@ -247,6 +247,21 @@
   .done p { margin: 0; font-size: 15px; color: var(--on-wall-soft); }
   .done .route { font-family: var(--display); font-weight: 600; letter-spacing: .06em; color: var(--on-wall); }
   button.plaque { border: 0; min-height: 44px; font-size: 15px; letter-spacing: .08em; padding: 12px 22px 11px; margin-top: 4px; }
+  /* Share pop-up: the message previewed on a piece of the wall, as blank tiles */
+  .card { margin: 14px 0 6px; padding: 16px 14px 14px; border-radius: 8px; color: var(--on-wall); background: var(--brick) var(--wall-img) center / 120px 60px; box-shadow: inset 0 0 0 2px var(--mortar), 0 3px 8px var(--shadow); }
+  .card .cardhead { margin: 0; font-family: var(--display); font-weight: 800; font-size: 15px; line-height: 1.3; letter-spacing: .08em; text-transform: uppercase; }
+  .card .mini { margin: 12px 0; gap: 5px; }
+  .card .mini li { gap: 4px; }
+  .card .mini .tile { width: 26px; height: 30px; border-radius: 4px; box-shadow: inset 0 0 0 2px var(--cobalt), 0 2px 3px var(--shadow); }
+  .card .mini .tile.match { box-shadow: inset 0 0 0 2px var(--on-cobalt), 0 2px 3px var(--shadow); }
+  .card .carddare { margin: 0; min-height: 2.8em; font-size: 16px; font-weight: 500; line-height: 1.4; text-wrap: balance; }
+  .linkish { border: 0; background: none; min-height: 40px; padding: 8px 10px; font-size: 14px; font-weight: 700; color: var(--cobalt); text-decoration: underline; text-underline-offset: 3px; }
+  .sends { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin: 6px 0 12px; }
+  .sends button.plaque { margin-top: 0; }
+  .sends .brass { display: inline-flex; align-items: center; border: 0; min-height: 44px; padding: 10px 16px; font-size: 14px; font-weight: 700; color: var(--on-brass); text-decoration: none; transition: transform 160ms ease-out; }
+  .sends .brass:active { transform: scale(0.97); }
+  .sheet :focus-visible { outline-color: var(--cobalt); }
+  .sheet .sharetext { color: var(--ink); background: rgb(27 61 146 / .08); margin-bottom: 10px; }
   /* the share message, shown only when it could not be copied automatically */
   .sharetext { margin: 0; max-width: 100%; padding: 10px 12px; text-align: left; font: 14px/1.45 var(--text); white-space: pre-wrap; overflow-wrap: anywhere; color: var(--on-wall); background: rgb(0 0 0 / .28); border-radius: 6px; user-select: all; -webkit-user-select: all; }
   button.plaque, .past button { transition: transform 160ms ease-out; }
@@ -383,7 +398,7 @@
 
     <h3>What I collect</h3>
     <p>Nothing myself. There's no sign-up, no email form and no analytics. I don't sell or share personal data, because I don't have any. The advertising below is handled by Google, not by me.</p>
-    <p>The Share result button hands a short message to your device's share menu, or copies it. It goes nowhere unless you send or paste it yourself.</p>
+    <p>The Share result button prepares a short message. You can copy it, hand it to your device's share menu, or open WhatsApp with it filled in. It goes nowhere unless you send or paste it yourself.</p>
 
     <h3>Advertising</h3>
     <p>Doorstep pays for itself with ads from Google AdSense. To show them, Google and its advertising partners may store or read cookies and similar identifiers on your device, and they receive technical details such as your IP address, your device and browser type, and the page you're on.</p>

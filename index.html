@@ -354,26 +354,51 @@
   .ground {
     position: sticky; bottom: 0; z-index: 5;
     margin-left: calc(-1 * var(--gl)); margin-right: calc(-1 * var(--gr));
-    padding: 14px var(--gr) 12px var(--gl);
+    padding: 14px var(--gr) max(12px, env(safe-area-inset-bottom, 0px)) var(--gl);
     background: var(--pave); box-shadow: inset 0 4px 0 var(--pave-edge), 0 -8px 16px var(--shadow);
     display: flex; flex-direction: column; align-items: center; gap: 10px;
   }
   /* on the solve the keyboard slides off the bottom edge before it is hidden */
   .ground { transition: translate 250ms var(--ease-out); }
   .ground.leaving { translate: 0 calc(100% + 16px); pointer-events: none; }
-  .tray { display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 440px; }
-  .tray div { display: flex; justify-content: center; gap: 5px; }
+  /* Keys sit where a real keyboard has them: every row is 20 half-key columns, so the bottom
+     row can start half a key in, Delete sits at the right end of the middle row and Enter
+     fills the bottom-right corner below it. */
+  .tray { display: grid; gap: 8px; width: 100%; max-width: 480px; }
+  .tray div { display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 5px; }
   .key {
-    flex: 1 1 0; max-width: 40px; height: 46px; padding: 0; border: 0; border-radius: 5px;
+    --lip: var(--enamel-shade);
+    grid-column: span 2; height: clamp(44px, 7.2vh, 52px); min-width: 0; padding: 0; border: 0; border-radius: 6px;
     display: grid; place-items: center;
     font-family: var(--display); font-weight: 800; font-size: 18px; line-height: 1; text-transform: uppercase;
     color: var(--cobalt); background: linear-gradient(160deg, var(--gloss) 0%, transparent 40%), var(--enamel);
-    box-shadow: 0 2px 0 var(--enamel-shade), 0 4px 5px var(--shadow);
-    transition: transform 90ms ease-out;
+    box-shadow: 0 3px 0 var(--lip), 0 5px 6px var(--shadow);
+    user-select: none; -webkit-user-select: none;
+    transition: transform 80ms ease-out, box-shadow 80ms ease-out, filter 160ms ease-out;
   }
-  .key.wide { flex: 1.7 1 0; max-width: 66px; font-size: 13px; letter-spacing: .03em; }
-  .key.enter { color: var(--on-cobalt); background: linear-gradient(160deg, var(--gloss) 0%, transparent 40%), var(--cobalt); box-shadow: 0 2px 0 rgb(0 0 0 / .35), 0 4px 5px var(--shadow); }
-  .key:active { transform: translateY(2px); }
+  /* a pressed key sinks onto its own lip */
+  .key:active { transform: translateY(3px); box-shadow: 0 0 0 var(--lip), 0 1px 2px var(--shadow); filter: brightness(.93); }
+  #key-z { grid-column: 2 / span 2; }
+  /* Delete is a brass plate, so the two keys that are not letters never read as letters */
+  .key.back {
+    --lip: var(--brass-lo); color: var(--on-brass);
+    background: linear-gradient(180deg, var(--brass-hi), var(--brass) 60%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .35), 0 3px 0 var(--lip), 0 5px 6px var(--shadow);
+  }
+  .key.back:active { box-shadow: inset 0 1px 0 rgb(255 255 255 / .35), 0 0 0 var(--lip), 0 1px 2px var(--shadow); }
+  /* Enter is quiet until four letters are down, then lights up to say "go" */
+  .key.enter {
+    --lip: rgb(0 0 0 / .4); grid-column: span 5; display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: 13px; letter-spacing: .06em;
+    color: var(--on-cobalt); background: linear-gradient(160deg, var(--gloss) 0%, transparent 40%), var(--cobalt);
+    filter: saturate(.55) brightness(.88);
+  }
+  .key.enter.ready { filter: none; box-shadow: inset 0 0 0 2px var(--brass-hi), 0 3px 0 var(--lip), 0 5px 6px var(--shadow); }
+  .key.enter.ready:active { filter: brightness(.93); box-shadow: inset 0 0 0 2px var(--brass-hi), 0 0 0 var(--lip), 0 1px 2px var(--shadow); }
+  .key.enter svg { display: none; flex: none; }
+  @media (max-width: 350px) { .tray div { gap: 4px; } }
+  @media (min-width: 400px) { .key.enter svg { display: block; } }
+  @media (min-width: 480px) { .key { font-size: 20px; } .key.enter { font-size: 14px; } }
   .tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
   .tools button { border: 0; min-height: 40px; padding: 8px 15px; font-size: 14px; font-weight: 700; transition: transform 90ms ease-out; }
   .tools button:active { transform: translateY(1px); }
@@ -627,6 +652,7 @@ function renderEntry(how) {
   li.classList.remove("rejected");
   li.setAttribute("aria-label", entryLabel());
   li.innerHTML = entryHtml(how);
+  syncKeys();
 }
 
 // how: "placed" when a word was just accepted, "arrive" on reaching HOME, "pop" when a letter was just typed
@@ -649,6 +675,7 @@ function renderRows(how) {
     li.innerHTML = entryHtml(how);
     ol.appendChild(li);
   }
+  syncKeys();
 }
 
 function nextInText() {
@@ -859,13 +886,19 @@ function addKey(row, id, label, html, cls, fn) {
   b.addEventListener("click", () => { fn(); b.blur(); });
   row.appendChild(b);
 }
+const ENTER_ICON = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 5v7a3 3 0 0 1-3 3H5"/><path d="M9 11l-4 4 4 4"/></svg>';
+// Laid out like a real keyboard: Delete at the right end of the middle row, Enter below it
 ["qwertyuiop", "asdfghjkl", "zxcvbnm"].forEach((letters, r) => {
   const row = document.createElement("div");
-  if (r === 2) addKey(row, "key-enter", "Enter", "Enter", "wide enter", submit);
   for (const c of letters) addKey(row, "key-" + c, "Letter " + c.toUpperCase(), c, "", () => typeLetter(c));
-  if (r === 2) addKey(row, "key-back", "Delete letter", BACK_ICON, "wide", backspace);
+  if (r === 1) addKey(row, "key-back", "Delete letter", BACK_ICON, "back", backspace);
+  if (r === 2) addKey(row, "key-enter", "Enter", "<span>Enter</span>" + ENTER_ICON, "enter", submit);
   $("tray").appendChild(row);
 });
+// Enter lights up once there are four letters to send
+function syncKeys() { const k = $("key-enter"); if (k) k.classList.toggle("ready", !finished && buf.length === 4); }
+// iOS Safari only shows a button's pressed look when the page listens for touches
+document.addEventListener("touchstart", () => {}, { passive: true });
 
 document.addEventListener("keydown", e => {
   if (finished || document.querySelector("dialog[open]") || e.ctrlKey || e.metaKey || e.altKey) return;
